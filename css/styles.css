@@ -1,0 +1,1504 @@
+/* ==========================================================================
+   METRÓNOMO MK - DESIGN SYSTEM & DARK OLED STYLES
+   Optimizado para Bateristas en Vivo y Ensayos (Móvil Portrait & Landscape)
+   ========================================================================== */
+
+:root {
+  /* Paleta Base OLED */
+  --bg-oled: #000000;
+  --bg-surface: #0a0a0a;
+  --bg-card: #121212;
+  --bg-card-hover: #1c1c1c;
+  --border-subtle: #222222;
+  --border-strong: #333333;
+
+  /* Colores de Alto Impacto */
+  --neon-green: #00FF66;
+  --neon-green-glow: rgba(0, 255, 102, 0.45);
+  --neon-green-subtle: rgba(0, 255, 102, 0.12);
+  
+  --neon-cyan: #38BDF8;
+  --neon-cyan-glow: rgba(56, 189, 248, 0.4);
+  --neon-cyan-subtle: rgba(56, 189, 248, 0.12);
+
+  --accent-purple: #A855F7;
+  --danger-red: #EF4444;
+  --warning-amber: #F59E0B;
+
+  /* Texto */
+  --text-pure: #FFFFFF;
+  --text-muted: #9CA3AF;
+  --text-dim: #6B7280;
+
+  /* Tipografías */
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Reset y Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-oled);
+  color: var(--text-pure);
+  font-family: var(--font-display);
+  overflow: hidden;
+  position: fixed;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  user-select: text;
+}
+
+/* Contenedor Principal de la App */
+#app-container {
+  width: 100vw;
+  height: 100dvh;
+  position: relative;
+  background-color: var(--bg-oled);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   1. MODO ESCENARIO (STAGE VIEW - PANTALLA COMPLETA)
+   ========================================================================== */
+
+.stage-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: var(--bg-oled);
+  z-index: 10;
+  transition: opacity 0.2s ease;
+}
+
+/* Destello de Pantalla Completa */
+.flash-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+  transition: background-color 0.04s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+.flash-idle {
+  background-color: transparent;
+}
+
+/* Destello Tiempo 1: Verde Neón (#00FF66) */
+.flash-accent {
+  background-color: rgba(0, 255, 102, 0.92);
+  box-shadow: inset 0 0 120px #00FF66;
+}
+
+/* Destello Tiempos Secundarios: Cian/Blanco (#38BDF8 / #FFFFFF) */
+.flash-sub {
+  background-color: rgba(56, 189, 248, 0.55);
+  box-shadow: inset 0 0 80px rgba(255, 255, 255, 0.8);
+}
+
+/* Barra Superior del Escenario */
+.stage-header {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 75%, transparent 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.stage-band-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #18181B;
+  border: 1px solid #27272A;
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  flex: 1;
+  min-width: 0;
+}
+
+#stage-band-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.stage-badges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.metric-badge, .bpm-badge, .wakelock-badge {
+  padding: 4px 7px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.metric-badge {
+  background: #111827;
+  color: var(--neon-cyan);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.bpm-badge {
+  background: #064E3B;
+  color: var(--neon-green);
+  border: 1px solid rgba(0, 255, 102, 0.4);
+}
+
+.wakelock-badge {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  font-size: 0.95rem;
+  background: rgba(0, 255, 102, 0.12);
+  color: var(--neon-green);
+  border: 1px solid rgba(0, 255, 102, 0.3);
+  cursor: pointer;
+}
+
+.wakelock-badge.disabled {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  border-color: var(--border-subtle);
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #18181B;
+  border: 1px solid #27272A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.icon-btn:active {
+  transform: scale(0.9);
+  background: #27272A;
+}
+
+.icon-btn.active-green {
+  background: var(--neon-green-subtle);
+  color: var(--neon-green);
+  border-color: var(--neon-green);
+}
+
+.icon-btn.active-muted {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger-red);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Cartel HUD de Canción y Artista (Centro del Escenario) */
+.stage-song-hud {
+  position: relative;
+  z-index: 22;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: calc(100% - 28px);
+  max-width: 520px;
+  margin: 4px auto 6px auto;
+  padding: 8px 16px;
+  background: rgba(12, 12, 16, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+.stage-song-index-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: var(--neon-green);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: rgba(0, 255, 102, 0.12);
+  border: 1px solid rgba(0, 255, 102, 0.25);
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-bottom: 3px;
+}
+
+.stage-song-title {
+  font-size: clamp(1.4rem, 5.2vw, 2.3rem);
+  font-weight: 900;
+  color: #FFFFFF;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  text-align: center;
+  word-break: break-word;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95);
+}
+
+.stage-song-artist {
+  font-size: clamp(0.92rem, 3.2vw, 1.25rem);
+  font-weight: 800;
+  color: var(--neon-cyan);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-top: 3px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95);
+}
+
+/* ==========================================================================
+   ÁREA CENTRAL: NÚMERO GIGANTE Y ZONA TÁCTIL DE REPRODUCCIÓN
+   ========================================================================== */
+
+.stage-center {
+  position: relative;
+  z-index: 15;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  padding-bottom: 6px;
+}
+
+.beat-display-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Número Masivo de Conteo en Pantalla */
+.beat-number {
+  font-family: var(--font-display);
+  font-size: clamp(12rem, 42vw, 36rem);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -6px;
+  text-align: center;
+  transition: transform 0.05s ease, color 0.05s ease;
+  transform: translateZ(0);
+}
+
+.beat-number.idle-num {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.beat-number.accent-num {
+  color: #000000;
+  text-shadow: 0 0 40px #FFFFFF, 0 0 80px var(--neon-green);
+  transform: scale(1.06);
+}
+
+.beat-number.sub-num {
+  color: #000000;
+  text-shadow: 0 0 35px #FFFFFF, 0 0 60px var(--neon-cyan);
+  transform: scale(1.03);
+}
+
+/* Estado Detenido: Botón Play Gigante de Guía */
+.play-guide-text {
+  font-size: clamp(0.9rem, 2.2vw, 1.25rem);
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--neon-green);
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(0, 255, 102, 0.08);
+  border: 1px solid rgba(0, 255, 102, 0.3);
+  animation: pulseNeon 2s infinite ease-in-out;
+}
+
+@keyframes pulseNeon {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); box-shadow: 0 0 20px var(--neon-green-glow); }
+}
+
+/* Puntos Indicadores de Métrica (Dots) */
+.metric-dots-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+  z-index: 20;
+}
+
+.metric-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #222222;
+  border: 2px solid #333333;
+  transition: all 0.06s ease;
+}
+
+.metric-dot.dot-accent {
+  border-color: rgba(0, 255, 102, 0.4);
+}
+
+.metric-dot.active-accent {
+  background: var(--neon-green);
+  border-color: #FFFFFF;
+  box-shadow: 0 0 16px var(--neon-green);
+  transform: scale(1.35);
+}
+
+.metric-dot.active-beat {
+  background: var(--neon-cyan);
+  border-color: #FFFFFF;
+  box-shadow: 0 0 14px var(--neon-cyan);
+  transform: scale(1.25);
+}
+
+/* ==========================================================================
+   CONTROLES LATERALES / INFERIORES DEL ESCENARIO (PREV / NEXT / CONTROLS)
+   ========================================================================== */
+
+.stage-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 25;
+  width: clamp(56px, 12vw, 90px);
+  height: clamp(80px, 20vh, 140px);
+  background: rgba(18, 18, 18, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 16px;
+  color: var(--text-pure);
+  transition: all 0.15s ease;
+}
+
+.stage-nav-btn:active {
+  background: rgba(30, 30, 30, 0.95);
+  border-color: var(--neon-cyan);
+  transform: translateY(-50%) scale(0.94);
+}
+
+.stage-nav-btn.btn-prev {
+  left: 12px;
+}
+
+.stage-nav-btn.btn-next {
+  right: 12px;
+}
+
+.stage-nav-btn span {
+  font-size: clamp(0.65rem, 1.4vw, 0.8rem);
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.stage-nav-btn svg {
+  width: clamp(24px, 5vw, 36px);
+  height: clamp(24px, 5vw, 36px);
+}
+
+/* Barra Inferior del Escenario */
+.stage-footer {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 10px 12px 16px 12px;
+  background: linear-gradient(0deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.7) 70%, transparent 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tempo-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.nudge-btn {
+  padding: 8px 9px;
+  background: #18181B;
+  border: 1px solid #27272A;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-pure);
+  transition: all 0.12s ease;
+  min-width: 32px;
+  text-align: center;
+}
+
+.nudge-btn:active {
+  background: #27272A;
+  transform: scale(0.92);
+}
+
+.tap-tempo-btn {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #1E1B4B 0%, #312E81 100%);
+  border: 1px solid #6366F1;
+  border-radius: 10px;
+  font-weight: 900;
+  font-size: 0.88rem;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  flex-shrink: 0;
+}
+
+.tap-tempo-btn:active {
+  transform: scale(0.92);
+  background: #4338CA;
+}
+
+.stage-nav-pill-btn {
+  padding: 8px 12px;
+  background: #18181B;
+  border: 1px solid #27272A;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.stage-nav-pill-btn:active {
+  background: #27272A;
+  color: var(--neon-green);
+}
+
+/* ==========================================================================
+   2. GESTOR DE SETLISTS Y REPERTORIO (SETLIST VIEW)
+   ========================================================================== */
+
+.setlist-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #080808;
+  z-index: 30;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow: hidden;
+}
+
+.setlist-view.active {
+  transform: translateY(0);
+}
+
+.setlist-header {
+  padding: 16px 20px;
+  background: #0F0F0F;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.setlist-title-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.setlist-title-box h2 {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+/* Selector de Banda */
+.band-selector-row {
+  padding: 10px 14px;
+  background: #131316;
+  border-bottom: 1px solid #27272A;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.band-select {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  background: #1C1C20;
+  border: 1px solid #333338;
+  color: #FFFFFF;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+  padding-right: 28px;
+}
+
+.btn-sm-action {
+  padding: 9px 12px;
+  background: #1C1C20;
+  border: 1px solid #333338;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--neon-green);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+}
+
+.btn-sm-action:active {
+  background: #27272A;
+  transform: scale(0.94);
+}
+
+/* Barra de Herramientas de Setlist (Armar Show / Reordenar) */
+.setlist-tools-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #0D0D10;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.btn-tool-action {
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border-subtle);
+  background: #18181C;
+  color: #FFFFFF;
+  transition: all 0.15s ease;
+}
+
+.btn-tool-action.btn-show-builder {
+  border-color: rgba(0, 255, 102, 0.35);
+  color: var(--neon-green);
+  background: rgba(0, 255, 102, 0.08);
+}
+
+.btn-tool-action.btn-reorder {
+  border-color: rgba(56, 189, 248, 0.35);
+  color: var(--neon-cyan);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.btn-tool-action:active {
+  transform: scale(0.95);
+  background: #27272A;
+}
+
+/* Lista de Canciones */
+.songs-scroll-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px 100px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.song-card {
+  background: #131316;
+  border: 1px solid #27272A;
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+
+.song-card.dragging {
+  opacity: 0.4;
+  border-color: var(--neon-cyan);
+  transform: scale(0.98);
+}
+
+.song-card.drag-over {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 15px rgba(0, 255, 102, 0.35);
+  transform: translateY(-2px);
+}
+
+.song-drag-handle {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  color: #71717A;
+  cursor: grab;
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.song-drag-handle:active {
+  cursor: grabbing;
+  color: var(--neon-cyan);
+}
+
+.song-card.active-playing {
+  border-color: var(--neon-green);
+  background: rgba(0, 255, 102, 0.08);
+  box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+}
+
+/* Fila Superior: Índice, Título, Artista y Badges */
+.song-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.song-index {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--neon-green);
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.song-card:not(.active-playing) .song-index {
+  color: #71717A;
+}
+
+.song-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 3px;
+}
+
+.song-name {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.song-sub {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--neon-cyan);
+  line-height: 1.2;
+}
+
+.song-meta-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.song-bpm-tag {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 0.85rem;
+  color: var(--neon-green);
+  background: rgba(0, 255, 102, 0.15);
+  border: 1px solid rgba(0, 255, 102, 0.3);
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.song-metric-tag {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 0.85rem;
+  color: var(--neon-cyan);
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* Fila Inferior: Botón de Selección Rápida + Acciones */
+.song-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 10px;
+  gap: 10px;
+}
+
+.btn-quick-select {
+  padding: 7px 14px;
+  background: #202024;
+  border: 1px solid #333338;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #E4E4E7;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.12s ease;
+}
+
+.btn-quick-select:active {
+  background: #2E2E33;
+}
+
+.btn-quick-select.is-active {
+  background: rgba(0, 255, 102, 0.18);
+  border-color: var(--neon-green);
+  color: var(--neon-green);
+}
+
+.song-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-icon-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #202024;
+  border: 1px solid #333338;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  color: #E4E4E7;
+  transition: all 0.12s ease;
+}
+
+.btn-icon-sm:hover, .btn-icon-sm:active {
+  background: #2E2E33;
+  color: var(--text-pure);
+  transform: scale(0.94);
+}
+
+.btn-icon-sm.btn-delete {
+  color: var(--danger-red);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* Botón Flotante para Agregar Canción */
+.floating-add-btn {
+  position: absolute;
+  bottom: 24px;
+  right: 20px;
+  padding: 14px 22px;
+  background: var(--neon-green);
+  color: #000000;
+  font-weight: 900;
+  font-size: 1rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 6px 20px rgba(0, 255, 102, 0.4);
+  z-index: 35;
+  transition: transform 0.15s ease;
+}
+
+.floating-add-btn:active {
+  transform: scale(0.94);
+}
+
+/* ==========================================================================
+   3. MODALES (CANCIONES, AJUSTES, IA)
+   ========================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-content {
+  background: #141414;
+  border: 1px solid #2A2A2A;
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: 24px 20px 32px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.modal-overlay.active .modal-content {
+  transform: translateY(0);
+}
+
+.modal-content-large {
+  max-width: 680px;
+  max-height: 94dvh;
+}
+
+/* Constructor de Setlist de Show */
+.show-builder-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #18181C;
+  border: 1px solid #27272A;
+  border-radius: 12px;
+}
+
+.badge-count {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 0.85rem;
+  color: var(--neon-green);
+}
+
+.btn-text-action {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--danger-red);
+  cursor: pointer;
+}
+
+.show-builder-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 52dvh;
+  overflow-y: auto;
+}
+
+.show-section-box {
+  background: #101014;
+  border: 1px solid #27272A;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.show-selected-songs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 48px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.show-available-songs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.empty-show-msg {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  padding: 14px;
+}
+
+.show-song-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #16161A;
+  border: 1px solid #27272A;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  transition: all 0.12s ease;
+}
+
+.show-song-item:active {
+  transform: scale(0.98);
+}
+
+.show-song-item.is-selected {
+  border-color: rgba(0, 255, 102, 0.4);
+  background: rgba(0, 255, 102, 0.08);
+}
+
+.show-song-name {
+  font-weight: 800;
+  color: #FFFFFF;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.show-song-sub {
+  font-size: 0.78rem;
+  color: var(--neon-cyan);
+  margin-left: 6px;
+}
+
+.show-song-badge {
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #202024;
+  color: var(--neon-green);
+}
+
+.btn-add-show-song {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(0, 255, 102, 0.15);
+  border: 1px solid rgba(0, 255, 102, 0.35);
+  color: var(--neon-green);
+  font-weight: 900;
+  font-size: 0.85rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.btn-remove-show-song {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--danger-red);
+  font-weight: 900;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Modal: Reordenamiento Rápido */
+.quick-reorder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 55dvh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.quick-reorder-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #18181C;
+  border: 1px solid #27272A;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.reorder-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.reorder-pos-btn {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: var(--neon-cyan);
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.reorder-arrows-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 12px;
+}
+
+.modal-header h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.close-modal-btn {
+  font-size: 1.5rem;
+  color: var(--text-dim);
+  padding: 4px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: #1E1E1E;
+  border: 1px solid #333333;
+  border-radius: 12px;
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--neon-green);
+  box-shadow: 0 0 10px rgba(0, 255, 102, 0.25);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Botón Asistente IA */
+.btn-ai-assist {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #1E1B4B 0%, #3B0764 100%);
+  border: 1px solid #9333EA;
+  border-radius: 14px;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.3);
+  transition: all 0.15s ease;
+}
+
+.btn-ai-assist:active {
+  transform: scale(0.96);
+  background: #581C87;
+}
+
+.ai-suggestion-box {
+  background: rgba(147, 51, 234, 0.1);
+  border: 1px solid rgba(147, 51, 234, 0.4);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fadeIn 0.2s ease;
+}
+
+.ai-suggestion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #C084FC;
+}
+
+.ai-suggestion-body {
+  font-size: 0.9rem;
+  color: var(--text-pure);
+  font-weight: 600;
+}
+
+.btn-apply-ai {
+  align-self: flex-end;
+  padding: 6px 14px;
+  background: #9333EA;
+  color: #FFFFFF;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-primary {
+  flex: 1;
+  padding: 14px;
+  background: var(--neon-green);
+  color: #000000;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.btn-secondary {
+  padding: 14px 20px;
+  background: #262626;
+  color: #FFFFFF;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   4. MODAL DE AJUSTES Y BACKUP
+   ========================================================================== */
+
+.settings-card {
+  background: #1C1C1C;
+  border: 1px solid #2E2E2E;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.setting-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Switch Toggle iOS style */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider-toggle {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #333333;
+  transition: .25s;
+  border-radius: 28px;
+}
+
+.slider-toggle:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .25s;
+  border-radius: 50%;
+}
+
+input:checked + .slider-toggle {
+  background-color: var(--neon-green);
+}
+
+input:checked + .slider-toggle:before {
+  transform: translateX(20px);
+  background-color: #000000;
+}
+
+.backup-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.btn-backup {
+  padding: 14px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  border: 1px solid var(--border-subtle);
+  background: #202020;
+  color: #FFFFFF;
+}
+
+.btn-backup.export {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: var(--neon-cyan);
+}
+
+.btn-backup.import {
+  border-color: rgba(0, 255, 102, 0.4);
+  color: var(--neon-green);
+}
+
+.btn-backup:active {
+  transform: scale(0.95);
+  background: #2C2C2C;
+}
+
+/* ==========================================================================
+   5. RESPONSIVE Y ORIENTACIÓN (LANDSCAPE VS PORTRAIT)
+   ========================================================================== */
+
+/* Teléfonos en Orientación Horizontal (Landscape) */
+@media (orientation: landscape) and (max-height: 550px) {
+  .stage-header {
+    padding: 4px 12px;
+  }
+
+  .stage-footer {
+    padding: 4px 12px 6px 12px;
+  }
+
+  .stage-song-hud {
+    padding: 4px 12px;
+    margin: 2px auto;
+    max-width: 440px;
+    border-radius: 12px;
+  }
+
+  .stage-song-title {
+    font-size: clamp(1.1rem, 3.4vw, 1.5rem);
+    line-height: 1.1;
+  }
+
+  .stage-song-artist {
+    font-size: clamp(0.75rem, 2vw, 0.95rem);
+    margin-top: 1px;
+  }
+
+  .stage-song-index-tag {
+    font-size: 0.62rem;
+    padding: 1px 6px;
+    margin-bottom: 1px;
+  }
+
+  .beat-number {
+    font-size: clamp(7rem, 26vw, 18rem);
+    line-height: 0.8;
+  }
+
+  .stage-nav-btn {
+    width: clamp(44px, 8vw, 68px);
+    height: clamp(60px, 32vh, 90px);
+  }
+
+  .metric-dots-container {
+    margin-top: 4px;
+  }
+
+  .modal-content {
+    border-radius: 20px;
+    max-height: 95dvh;
+    padding: 16px;
+  }
+}
+
+/* Toast de Notificaciones Rápidas */
+.toast-notice {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #1F2937;
+  color: #FFFFFF;
+  border: 1px solid #374151;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+
+.toast-notice.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

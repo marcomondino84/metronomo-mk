@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Metrónomo MK - Live Drummer Pro</title>
+
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Metrónomo MK">
+  <meta name="description" content="Metrónomo visual de ultra precisión y gestor de setlists para bateristas en vivo y ensayos.">
+
+  <!-- Manifest & Favicon -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="apple-touch-icon" href="./icons/icon.svg">
+
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+
+  <!-- Contenedor Principal -->
+  <div id="app-container">
+
+    <!-- ====================================================================
+         1. MODO ESCENARIO (VISTA PRINCIPAL FULLSCREEN)
+         ==================================================================== -->
+    <main id="stage-view" class="stage-view">
+      
+      <!-- Destello Visual de Pantalla Completa -->
+      <div id="flash-overlay" class="flash-overlay flash-idle"></div>
+
+      <!-- Barra Superior de Estado y Controles (Header Escenario) -->
+      <header class="stage-header">
+        <div id="stage-band-badge" class="stage-band-badge" title="Banda Activa">
+          <span id="stage-band-name">🎸 MK Rock Experience</span>
+        </div>
+
+        <div class="stage-badges">
+          <div id="stage-metric-val" class="metric-badge">4/4</div>
+          <div id="stage-bpm-val" class="bpm-badge">120 BPM</div>
+          <button id="wakelock-badge" class="wakelock-badge" title="Pantalla Siempre Encendida (Screen Wake Lock)">
+            ⚡
+          </button>
+          <button id="btn-toggle-audio" class="icon-btn active-muted" title="Sonido Silenciado por defecto (Toca para activar click)">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27l4.73 4.73H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+          </button>
+          <button id="btn-toggle-fullscreen" class="icon-btn" title="Pantalla Completa">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Botones de Navegación Lateral (Anterior / Siguiente) -->
+      <button id="btn-stage-prev" class="stage-nav-btn btn-prev" title="Canción Anterior (Flecha Izquierda)">
+        <svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        <span>PREV</span>
+      </button>
+
+      <button id="btn-stage-next" class="stage-nav-btn btn-next" title="Siguiente Canción (Flecha Derecha)">
+        <svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span>NEXT</span>
+      </button>
+
+      <!-- Zona Central de Impacto / Toque (Play / Pause + HUD Canción + Número Gigante) -->
+      <div id="stage-center-touch" class="stage-center">
+        <!-- Banner HUD de Canción y Artista (Ultra Legible a 2 metros) -->
+        <div class="stage-song-hud">
+          <span id="stage-song-index-tag" class="stage-song-index-tag">TEMA 1 DE 6</span>
+          <h1 id="stage-song-title" class="stage-song-title">Cargando...</h1>
+          <h2 id="stage-song-artist" class="stage-song-artist">Metrónomo MK</h2>
+        </div>
+
+        <div class="beat-display-wrapper">
+          <div id="beat-number" class="beat-number idle-num">1</div>
+          
+          <div id="play-guide-text" class="play-guide-text">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            TOCA PARA INICIAR
+          </div>
+
+          <!-- Puntos Indicadores de Métrica -->
+          <div id="metric-dots" class="metric-dots-container"></div>
+        </div>
+      </div>
+
+      <!-- Barra Inferior (Controles de Tempo, Tap y Setlist) -->
+      <footer class="stage-footer">
+        <div class="tempo-controls-bar">
+          <button id="btn-nudge-minus-5" class="nudge-btn">-5</button>
+          <button id="btn-nudge-minus-1" class="nudge-btn">-1</button>
+          <button id="btn-nudge-plus-1" class="nudge-btn">+1</button>
+          <button id="btn-nudge-plus-5" class="nudge-btn">+5</button>
+        </div>
+
+        <button id="btn-tap-tempo" class="tap-tempo-btn" title="Marcar tempo manualmente (Tecla T)">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          TAP
+        </button>
+
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-open-setlist" class="stage-nav-pill-btn">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            SETLIST
+          </button>
+          <button id="btn-open-settings" class="icon-btn" title="Ajustes y Backup">
+            ⚙️
+          </button>
+        </div>
+      </footer>
+    </main>
+
+    <!-- ====================================================================
+         2. GESTOR DE SETLISTS Y REPERTORIO
+         ==================================================================== -->
+    <section id="setlist-view" class="setlist-view">
+      <div class="setlist-header">
+        <div class="setlist-title-box">
+          <h2>📋 Repertorio & Bandas</h2>
+        </div>
+        <button id="btn-close-setlist" class="icon-btn" title="Volver al Escenario">✕</button>
+      </div>
+
+      <!-- Selector de Banda -->
+      <div class="band-selector-row">
+        <select id="band-select-dropdown" class="band-select"></select>
+        <button id="btn-new-band" class="btn-sm-action" title="Crear nueva banda">+ Banda</button>
+        <button id="btn-delete-band" class="btn-sm-action btn-delete-band" title="Eliminar banda actual">🗑️</button>
+      </div>
+
+      <!-- Barra de Herramientas Rápidas de Setlist -->
+      <div class="setlist-tools-row">
+        <button id="btn-open-show-builder" class="btn-tool-action btn-show-builder" title="Crear una lista personalizada para un show en vivo">
+          <span>🎤 Armar Setlist de Show</span>
+        </button>
+        <button id="btn-open-quick-reorder" class="btn-tool-action btn-reorder" title="Reordenar temas rápidamente">
+          <span>⇄ Reordenar Rápido</span>
+        </button>
+      </div>
+
+      <!-- Lista Scrollable de Canciones -->
+      <div id="songs-scroll-container" class="songs-scroll-list"></div>
+
+      <!-- Botón Flotante para Agregar Canción -->
+      <button id="btn-floating-add-song" class="floating-add-btn">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        Nueva Canción
+      </button>
+    </section>
+
+    <!-- ====================================================================
+         3. MODAL: AGREGAR / EDITAR CANCIÓN + ASISTENTE IA
+         ==================================================================== -->
+    <div id="song-modal-overlay" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-song-title-heading">Nueva Canción</h3>
+          <button id="btn-close-song-modal" class="close-modal-btn">✕</button>
+        </div>
+
+        <div class="form-group">
+          <label>Título de la Canción</label>
+          <input type="text" id="input-song-title" class="form-input" placeholder="ej. Master of Puppets">
+        </div>
+
+        <div class="form-group">
+          <label>Artista / Banda</label>
+          <input type="text" id="input-song-artist" class="form-input" placeholder="ej. Metallica">
+        </div>
+
+        <!-- Botón Asistente IA -->
+        <button type="button" id="btn-ai-assist" class="btn-ai-assist">
+          <span>🤖 Sugerir BPM y Métrica con IA</span>
+        </button>
+
+        <div id="ai-suggestion-container"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>BPM (Tempo)</label>
+            <input type="number" id="input-song-bpm" class="form-input" min="20" max="400" value="120">
+          </div>
+          <div class="form-group">
+            <label>Métrica</label>
+            <select id="select-song-metric" class="form-input">
+              <option value="4/4" selected>4/4 (Estándar)</option>
+              <option value="3/4">3/4 (Vals / Ternario)</option>
+              <option value="6/8">6/8 (Compuesto)</option>
+              <option value="2/4">2/4 (Marcha / Polka)</option>
+              <option value="5/4">5/4 (Impar - ej. Take Five)</option>
+              <option value="7/8">7/8 (Progresivo - ej. Rush)</option>
+              <option value="7/4">7/4 (Progresivo - ej. Money)</option>
+              <option value="9/8">9/8 (Compuesto)</option>
+              <option value="12/8">12/8 (Blues / Shuffle)</option>
+              <option value="custom">Personalizada...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Ajuste Rápido de BPM</label>
+          <input type="range" id="range-song-bpm" min="30" max="300" value="120" style="accent-color: var(--neon-green); width: 100%;">
+        </div>
+
+        <!-- Fila de Métrica Personalizada (Oculta por defecto) -->
+        <div id="custom-metric-row" class="form-row" style="display: none;">
+          <div class="form-group">
+            <label>Numerador (Pulsos)</label>
+            <input type="number" id="input-custom-num" class="form-input" min="1" max="32" value="4">
+          </div>
+          <div class="form-group">
+            <label>Denominador (Figura)</label>
+            <input type="number" id="input-custom-den" class="form-input" min="1" max="32" value="4">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Notas de Batería / Estructura (Opcional)</label>
+          <input type="text" id="input-song-notes" class="form-input" placeholder="ej. Entra con redoble de caja en compás 4">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel-song-modal" class="btn-secondary">Cancelar</button>
+          <button type="button" id="btn-save-song-modal" class="btn-primary">Guardar Canción</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         4. MODAL: AJUSTES Y BACKUP / RESTAURACIÓN JSON
+         ==================================================================== -->
+    <div id="settings-modal-overlay" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>⚙️ Ajustes & Copia de Seguridad</h3>
+          <button id="btn-close-settings-modal" class="close-modal-btn">✕</button>
+        </div>
+
+        <!-- Configuración de Rendimiento en Escenario -->
+        <div class="settings-card">
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Clic de Audio</span>
+              <span class="setting-desc">Muteado por defecto para enfoque 100% visual.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="switch-audio-click">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Pantalla Siempre Encendida</span>
+              <span class="setting-desc">Screen Wake Lock API para evitar bloqueo.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="switch-wakelock" checked>
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Vibración Háptica</span>
+              <span class="setting-desc">Pulsos de vibración en tiempo 1 en móviles.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="switch-haptic" checked>
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Copia de Seguridad y Restauración JSON -->
+        <div class="settings-card">
+          <h4 style="font-size: 1rem; color: var(--text-pure);">📦 Backup & Restauración (JSON)</h4>
+          <p style="font-size: 0.82rem; color: var(--text-muted);">
+            Exporta tus bandas, canciones, BPMs y métricas en un archivo .json para resguardar o transferir a otro teléfono.
+          </p>
+
+          <div class="backup-actions-grid">
+            <button id="btn-export-backup" class="btn-backup export">
+              <span style="font-size: 1.4rem;">💾</span>
+              <span>Exportar Backup</span>
+            </button>
+
+            <label class="btn-backup import" style="cursor: pointer;">
+              <span style="font-size: 1.4rem;">📂</span>
+              <span>Restaurar Backup</span>
+              <input type="file" id="input-restore-backup" accept=".json" style="display: none;">
+            </label>
+          </div>
+        </div>
+
+        <!-- Opciones de Reinicio -->
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button id="btn-reset-demo" class="btn-secondary" style="color: var(--warning-amber); border: 1px solid rgba(245, 158, 11, 0.3);">
+            🔄 Restaurar Repertorio de Demostración
+          </button>
+        </div>
+
+        <div style="text-align: center; font-size: 0.75rem; color: var(--text-dim); margin-top: 6px;">
+          Metrónomo MK v1.0.6 • Diseñado para bateristas en vivo y ensayos
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         5. MODAL: ARMAR SETLIST DE SHOW / VIVO
+         ==================================================================== -->
+    <div id="show-builder-modal-overlay" class="modal-overlay">
+      <div class="modal-content modal-content-large">
+        <div class="modal-header">
+          <div>
+            <h3 style="font-size: 1.2rem; font-weight: 900; color: var(--neon-green);">🎤 Armar Setlist para Show</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Toca las canciones en el orden en que las vas a tocar</p>
+          </div>
+          <button id="btn-close-show-builder" class="close-modal-btn">✕</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nombre del Setlist:</label>
+          <input type="text" id="input-show-name" class="form-input" placeholder="Ej: Resto Urbano - Show 15 Temas">
+        </div>
+
+        <div class="show-builder-stats-bar">
+          <span id="show-builder-count-tag" class="badge-count">0 temas en el show</span>
+          <button id="btn-clear-show-selection" class="btn-text-action" type="button">Vaciar lista</button>
+        </div>
+
+        <div class="show-builder-container">
+          <!-- Columna / Sección: Temas elegidos para el show -->
+          <div class="show-section-box">
+            <div class="section-title">
+              <span>🎯 Orden del Show (Toca ✕ para quitar o ▲/▼ para mover)</span>
+            </div>
+            <div id="show-selected-songs-list" class="show-selected-songs-list">
+              <div class="empty-show-msg">Toca canciones de la lista de abajo para armar tu setlist...</div>
+            </div>
+          </div>
+
+          <!-- Columna / Sección: Catálogo de canciones de la banda -->
+          <div class="show-section-box">
+            <div class="section-title">
+              <span>📚 Repertorio Completo (Toca + para agregar)</span>
+            </div>
+            <div id="show-available-songs-list" class="show-available-songs-list"></div>
+          </div>
+        </div>
+
+        <div class="modal-actions-grid" style="margin-top: 10px;">
+          <button id="btn-cancel-show-builder" type="button" class="btn-secondary">Cancelar</button>
+          <button id="btn-save-show-setlist" type="button" class="btn-primary" style="background: var(--neon-green); color: #000; font-weight: 900;">
+            💾 Guardar y Cargar Setlist
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         6. MODAL: REORDENAMIENTO RÁPIDO
+         ==================================================================== -->
+    <div id="quick-reorder-modal-overlay" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h3 style="font-size: 1.2rem; font-weight: 900; color: var(--neon-cyan);">⇄ Reordenar Repertorio</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Mueve canciones arriba/abajo o salta directamente de posición</p>
+          </div>
+          <button id="btn-close-quick-reorder" class="close-modal-btn">✕</button>
+        </div>
+
+        <div id="quick-reorder-list" class="quick-reorder-list"></div>
+
+        <div class="modal-actions-grid" style="margin-top: 10px;">
+          <button id="btn-close-quick-reorder-done" type="button" class="btn-primary">
+            ✓ Guardar Orden
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script src="./js/wake-lock.js"></script>
+  <script src="./js/storage.js"></script>
+  <script src="./js/audio-engine.js"></script>
+  <script src="./js/visual-engine.js"></script>
+  <script src="./js/tap-tempo.js"></script>
+  <script src="./js/ai-assistant.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

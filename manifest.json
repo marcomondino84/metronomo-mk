@@ -1,0 +1,32 @@
+{
+  "name": "Metrónomo MK - Live Drummer Pro",
+  "short_name": "Metrónomo MK",
+  "description": "Metrónomo visual de ultra precisión y gestor de setlists para bateristas en vivo y ensayos.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": ["music", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Modo Escenario",
+      "url": "./index.html#stage",
+      "description": "Abrir directamente el metrónomo en pantalla completa"
+    },
+    {
+      "name": "Gestionar Setlists",
+      "url": "./index.html#setlist",
+      "description": "Editar canciones y repertorios"
+    }
+  ]
+}
