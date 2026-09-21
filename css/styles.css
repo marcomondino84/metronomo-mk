@@ -68,14 +68,18 @@ input, select, textarea {
   user-select: text;
 }
 
-/* Contenedor Principal de la App */
+/* Contenedor Principal de la App (100% compatible con navegadores de tablets y móviles antiguos) */
 #app-container {
+  width: 100%;
   width: 100vw;
+  height: 100%;
+  height: 100vh;
   height: 100dvh;
   position: relative;
   background-color: var(--bg-oled);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* ==========================================================================
@@ -93,6 +97,7 @@ input, select, textarea {
   justify-content: space-between;
   background-color: var(--bg-oled);
   z-index: 10;
+  overflow: hidden;
   transition: opacity 0.2s ease;
 }
 
@@ -305,18 +310,20 @@ input, select, textarea {
   position: relative;
   z-index: 15;
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
   width: 100%;
-  height: 100%;
   padding-bottom: 6px;
 }
 
 .beat-display-wrapper {
   flex: 1;
+  min-height: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -324,13 +331,13 @@ input, select, textarea {
   pointer-events: none;
 }
 
-/* Número Masivo de Conteo en Pantalla */
+/* Número Masivo de Conteo en Pantalla (escalado armónico para tablets y teléfonos) */
 .beat-number {
   font-family: var(--font-display);
-  font-size: clamp(12rem, 42vw, 36rem);
+  font-size: clamp(6rem, min(38vh, 30vw), 20rem);
   font-weight: 900;
   line-height: 0.85;
-  letter-spacing: -6px;
+  letter-spacing: -4px;
   text-align: center;
   transition: transform 0.05s ease, color 0.05s ease;
   transform: translateZ(0);
@@ -1012,10 +1019,14 @@ input, select, textarea {
   position: fixed;
   top: 0;
   left: 0;
+  width: 100%;
   width: 100vw;
+  height: 100%;
+  height: 100vh;
   height: 100dvh;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 100;
   display: flex;
   align-items: flex-end;
@@ -1036,6 +1047,7 @@ input, select, textarea {
   border-radius: 24px 24px 0 0;
   width: 100%;
   max-width: 600px;
+  max-height: 90vh;
   max-height: 90dvh;
   overflow-y: auto;
   padding: 24px 20px 32px 20px;
@@ -1052,6 +1064,7 @@ input, select, textarea {
 
 .modal-content-large {
   max-width: 680px;
+  max-height: 94vh;
   max-height: 94dvh;
 }
 
@@ -1086,6 +1099,7 @@ input, select, textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 52vh;
   max-height: 52dvh;
   overflow-y: auto;
 }
@@ -1213,6 +1227,7 @@ input, select, textarea {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 55vh;
   max-height: 55dvh;
   overflow-y: auto;
   padding-right: 2px;
@@ -1519,50 +1534,56 @@ input:checked + .slider-toggle:before {
 }
 
 /* ==========================================================================
-   5. RESPONSIVE Y ORIENTACIÓN (LANDSCAPE VS PORTRAIT)
+   5. RESPONSIVE Y ORIENTACIÓN (TABLETS Y TELÉFONOS EN LANDSCAPE)
    ========================================================================== */
 
-/* Teléfonos en Orientación Horizontal (Landscape) */
-@media (orientation: landscape) and (max-height: 550px) {
+/* Tablets y teléfonos en Orientación Horizontal (Landscape hasta 850px de altura) */
+@media (orientation: landscape) and (max-height: 850px) {
   .stage-header {
-    padding: 4px 12px;
+    padding: 4px 14px;
   }
 
   .stage-footer {
-    padding: 4px 12px 6px 12px;
+    padding: 6px 14px 10px 14px;
   }
 
   .stage-song-hud {
-    padding: 4px 12px;
-    margin: 2px auto;
-    max-width: 440px;
-    border-radius: 12px;
+    padding: 4px 16px;
+    margin: 2px auto 4px auto;
+    max-width: 480px;
+    border-radius: 14px;
   }
 
   .stage-song-title {
-    font-size: clamp(1.1rem, 3.4vw, 1.5rem);
-    line-height: 1.1;
+    font-size: clamp(1.15rem, 2.8vw, 1.6rem);
+    line-height: 1.15;
   }
 
   .stage-song-artist {
-    font-size: clamp(0.75rem, 2vw, 0.95rem);
+    font-size: clamp(0.75rem, 1.8vw, 1rem);
     margin-top: 1px;
   }
 
   .stage-song-index-tag {
     font-size: 0.62rem;
     padding: 1px 6px;
-    margin-bottom: 1px;
+    margin-bottom: 2px;
   }
 
   .beat-number {
-    font-size: clamp(7rem, 26vw, 18rem);
-    line-height: 0.8;
+    font-size: clamp(5rem, 32vh, 14rem) !important;
+    line-height: 0.85;
+  }
+
+  .play-guide-text {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    margin-top: 2px;
   }
 
   .stage-nav-btn {
-    width: clamp(44px, 8vw, 68px);
-    height: clamp(60px, 32vh, 90px);
+    width: clamp(44px, 6vw, 68px);
+    height: clamp(55px, 20vh, 85px);
   }
 
   .metric-dots-container {
@@ -1570,8 +1591,9 @@ input:checked + .slider-toggle:before {
   }
 
   .modal-content {
-    border-radius: 20px;
-    max-height: 95dvh;
+    border-radius: 18px;
+    max-height: 94vh;
+    max-height: 94dvh;
     padding: 16px;
   }
 }
@@ -1963,6 +1985,7 @@ input:checked + .slider-toggle:before {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: 48vh;
   max-height: 48dvh;
   overflow-y: auto;
   padding-right: 4px;
