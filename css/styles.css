@@ -541,6 +541,37 @@ input, select, textarea {
   color: var(--neon-green);
 }
 
+@media (max-width: 440px) {
+  .stage-footer {
+    padding: 6px 8px 12px 8px;
+    gap: 4px;
+  }
+  .nudge-btn {
+    padding: 6px 4px;
+    min-width: 25px;
+    font-size: 0.72rem;
+  }
+  .tempo-controls-bar {
+    gap: 2px;
+  }
+  .tap-tempo-btn {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+    gap: 3px;
+  }
+  .stage-nav-pill-btn {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+    gap: 3px;
+  }
+  #btn-open-settings {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 1.05rem !important;
+    flex-shrink: 0 !important;
+  }
+}
+
 /* ==========================================================================
    2. GESTOR DE SETLISTS Y REPERTORIO (SETLIST VIEW)
    ========================================================================== */

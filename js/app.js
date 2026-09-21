@@ -1344,8 +1344,9 @@ class AppController {
       }
     });
 
-    // 12. Modal Ajustes
+    // 12. Modal Ajustes (Accesible desde Escenario y desde Setlist)
     document.getElementById('btn-open-settings')?.addEventListener('click', () => this.openSettingsModal());
+    document.getElementById('btn-open-settings-setlist')?.addEventListener('click', () => this.openSettingsModal());
     document.getElementById('btn-close-settings-modal')?.addEventListener('click', () => this.closeSettingsModal());
     document.getElementById('btn-export-backup')?.addEventListener('click', () => this.exportBackupData());
     document.getElementById('input-restore-backup')?.addEventListener('change', (e) => this.importBackupFile(e));
