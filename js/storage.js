@@ -17,7 +17,8 @@ const DEFAULT_SETTINGS = {
   hapticFeedback: true,           // Vibración al tap y pulso (si soportado)
   wakeLockAuto: true,             // Mantener pantalla encendida automáticamente
   accentFrequency: 1600,          // Tono pulso 1 (agudo penetrante)
-  beatFrequency: 900              // Tono pulsos secundarios
+  beatFrequency: 900,             // Tono pulsos secundarios
+  compactListView: false          // Modo lista universal compacto
 };
 
 const DEMO_BANDS = [
@@ -416,11 +417,37 @@ class StorageManager {
     return newBand;
   }
 
+  addExistingSongsToBand(targetBandId, songsArray) {
+    const targetBand = this.bands.find(b => b.id === targetBandId) || this.getActiveBand();
+    if (!targetBand) throw new Error('Banda de destino no encontrada');
+
+    if (!Array.isArray(targetBand.songs)) {
+      targetBand.songs = [];
+    }
+
+    const addedSongs = [];
+    songsArray.forEach(sourceSong => {
+      const newSong = {
+        id: 'song_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        title: (sourceSong.title || 'Canción').trim(),
+        artist: (sourceSong.artist || '').trim(),
+        bpm: parseInt(sourceSong.bpm, 10) || 120,
+        timeSignature: sourceSong.timeSignature ? { ...sourceSong.timeSignature } : { numerator: 4, denominator: 4, label: '4/4' },
+        notes: (sourceSong.notes || '').trim()
+      };
+      targetBand.songs.push(newSong);
+      addedSongs.push(newSong);
+    });
+
+    this._saveBands();
+    return addedSongs;
+  }
+
   // Backup & Restore en JSON
   exportBackup() {
     const backupData = {
       app: 'Metronomo MK',
-      version: '1.0.5',
+      version: '1.0.6',
       exportedAt: new Date().toISOString(),
       bands: this.bands,
       activeBandId: this.activeBandId,
@@ -435,7 +462,7 @@ class StorageManager {
     const dateStr = new Date().toISOString().split('T')[0];
     const a = document.createElement('a');
     a.href = url;
-    a.download = `metronomo-mk-backup-${dateStr}.json`;
+    a.download = `metronomo-backup-${dateStr}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

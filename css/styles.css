@@ -637,29 +637,43 @@ input, select, textarea {
   transform: scale(0.94);
 }
 
-/* Barra de Herramientas de Setlist (Armar Show / Reordenar) */
+/* Barra de Herramientas de Setlist (Armar Show / Reordenar / Modo Lista) */
 .setlist-tools-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 8px 14px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 8px 10px;
   background: #0D0D10;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .btn-tool-action {
-  padding: 8px 10px;
-  border-radius: 10px;
+  padding: 8px 4px;
+  border-radius: 9px;
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: 0.77rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   border: 1px solid var(--border-subtle);
   background: #18181C;
   color: #FFFFFF;
   transition: all 0.15s ease;
+  min-width: 0;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.btn-tool-action .tool-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.btn-tool-action .tool-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .btn-tool-action.btn-show-builder {
@@ -880,27 +894,83 @@ input, select, textarea {
   border-color: rgba(239, 68, 68, 0.35);
 }
 
-/* Botón Flotante para Agregar Canción */
-.floating-add-btn {
+/* Acciones Inferiores de Setlist (Nueva Canción y Elegir del Repertorio) */
+.setlist-bottom-actions {
   position: absolute;
-  bottom: 24px;
-  right: 20px;
-  padding: 14px 22px;
-  background: var(--neon-green);
-  color: #000000;
-  font-weight: 900;
-  font-size: 1rem;
-  border-radius: 999px;
+  bottom: 16px;
+  left: 12px;
+  right: 12px;
   display: flex;
-  align-items: center;
   gap: 8px;
-  box-shadow: 0 6px 20px rgba(0, 255, 102, 0.4);
+  justify-content: center;
   z-index: 35;
-  transition: transform 0.15s ease;
+  pointer-events: none;
 }
 
-.floating-add-btn:active {
-  transform: scale(0.94);
+.btn-action-pill {
+  pointer-events: auto;
+  padding: 11px 16px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  flex: 1;
+  max-width: 220px;
+  min-width: 0;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.btn-new-song-action {
+  background: var(--neon-green);
+  color: #000000;
+  border: 1px solid rgba(0, 255, 102, 0.5);
+}
+
+.btn-new-song-action:active {
+  transform: scale(0.95);
+}
+
+.btn-picker-action {
+  background: #141418;
+  color: var(--neon-cyan);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.btn-picker-action:active {
+  transform: scale(0.95);
+  background: #1E1E24;
+}
+
+.floating-add-btn {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .setlist-bottom-actions {
+    left: 8px;
+    right: 8px;
+    bottom: 12px;
+    gap: 6px;
+  }
+  .btn-action-pill {
+    padding: 10px 10px;
+    font-size: 0.80rem;
+    gap: 5px;
+  }
+  .btn-action-pill svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
 }
 
 /* ==========================================================================
@@ -1501,4 +1571,430 @@ input:checked + .slider-toggle:before {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   4. MEJORAS: BOTÓN LIST TOGGLE & MODO LISTA COMPACTO UNIVERSAL
+   ========================================================================== */
+
+.btn-list-toggle {
+  background: #141418 !important;
+  color: var(--neon-cyan) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+}
+
+.btn-list-toggle.is-active {
+  background: rgba(56, 189, 248, 0.2) !important;
+  border-color: var(--neon-cyan) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
+}
+
+/* Modo Lista Compacto Universal en Repertorio Principal */
+.songs-scroll-list.is-compact-mode {
+  gap: 5px;
+  padding: 8px 10px 90px 10px;
+}
+
+.songs-scroll-list.is-compact-mode .song-compact-card,
+.songs-scroll-list.is-compact-mode .song-card {
+  padding: 6px 10px;
+  min-height: auto;
+  border-radius: 10px;
+  background: #111115;
+  border: 1px solid #232328;
+  gap: 0;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+}
+
+.songs-scroll-list.is-compact-mode .song-card:hover {
+  background: #16161C;
+  border-color: #353540;
+}
+
+.songs-scroll-list.is-compact-mode .song-card:active {
+  background: #1A1A22;
+}
+
+.songs-scroll-list.is-compact-mode .song-card.active-playing {
+  border-color: var(--neon-green) !important;
+  background: rgba(0, 255, 102, 0.09) !important;
+  box-shadow: 0 0 14px rgba(0, 255, 102, 0.22);
+}
+
+.songs-scroll-list.is-compact-mode .song-compact-row,
+.songs-scroll-list.is-compact-mode .song-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.songs-scroll-list.is-compact-mode .song-card-bottom {
+  display: none !important;
+}
+
+/* Asa de arrastre compacta */
+.songs-scroll-list.is-compact-mode .song-drag-handle {
+  width: 22px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  color: #585864;
+  cursor: grab;
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.songs-scroll-list.is-compact-mode .song-drag-handle:active {
+  color: var(--neon-green);
+  cursor: grabbing;
+}
+
+/* Índice de canción compacto */
+.songs-scroll-list.is-compact-mode .song-index {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #71717A;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.songs-scroll-list.is-compact-mode .song-card.active-playing .song-index {
+  color: var(--neon-green);
+}
+
+/* Detalles de canción: Columna para dar 100% de prioridad al título */
+.songs-scroll-list.is-compact-mode .song-details {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.songs-scroll-list.is-compact-mode .song-name {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.songs-scroll-list.is-compact-mode .song-sub {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--neon-cyan);
+  opacity: 0.88;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+/* Meta información compacta (BPM y Métrica) */
+.songs-scroll-list.is-compact-mode .song-meta-compact,
+.songs-scroll-list.is-compact-mode .song-meta-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.songs-scroll-list.is-compact-mode .song-bpm-tag {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: var(--neon-green);
+  background: rgba(0, 255, 102, 0.12);
+  border: 1px solid rgba(0, 255, 102, 0.28);
+  padding: 2px 6px;
+  border-radius: 5px;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.songs-scroll-list.is-compact-mode .song-bpm-tag .bpm-unit {
+  font-size: 0.65rem;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.songs-scroll-list.is-compact-mode .song-metric-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--neon-cyan);
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 1px 5px;
+  border-radius: 5px;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+/* Controles de fila compacta */
+.songs-scroll-list.is-compact-mode .song-compact-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.songs-scroll-list.is-compact-mode .btn-icon-sm {
+  width: 28px;
+  height: 28px;
+  font-size: 0.78rem;
+  border-radius: 6px;
+  background: #18181E;
+  border: 1px solid #2B2B36;
+  color: #D1D5DB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.songs-scroll-list.is-compact-mode .btn-icon-sm:hover {
+  background: #24242E;
+  color: #FFFFFF;
+}
+
+/* Ajustes Responsivos Móviles para Modo Lista */
+@media (max-width: 580px) {
+  /* En móviles, ocultar las flechas de reordenar en la fila compacta:
+     el reordenamiento se hace directo por toque/drag en el asa o en 'Reordenar Rápido' */
+  .songs-scroll-list.is-compact-mode .btn-reorder-nav {
+    display: none !important;
+  }
+
+  .songs-scroll-list.is-compact-mode .song-compact-row,
+  .songs-scroll-list.is-compact-mode .song-card-top {
+    gap: 6px;
+  }
+
+  .songs-scroll-list.is-compact-mode .song-name {
+    font-size: 0.92rem;
+  }
+
+  .songs-scroll-list.is-compact-mode .song-sub {
+    font-size: 0.72rem;
+  }
+
+  .songs-scroll-list.is-compact-mode .btn-icon-sm {
+    width: 26px;
+    height: 26px;
+    font-size: 0.74rem;
+  }
+}
+
+@media (max-width: 390px) {
+  /* En teléfonos ultra compactos (< 390px como iPhone SE o Galaxy A) */
+  .songs-scroll-list.is-compact-mode {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .songs-scroll-list.is-compact-mode .song-card {
+    padding: 5px 8px;
+  }
+
+  .songs-scroll-list.is-compact-mode .song-drag-handle {
+    width: 18px;
+    font-size: 0.95rem;
+  }
+
+  .songs-scroll-list.is-compact-mode .song-index {
+    width: 20px;
+    font-size: 0.85rem;
+  }
+
+  .songs-scroll-list.is-compact-mode .song-metric-tag {
+    display: none !important;
+  }
+
+  .songs-scroll-list.is-compact-mode .btn-delete {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   5. TAP TEMPO EN MODAL Y LIVE BADGE EN METRÓNOMO
+   ========================================================================== */
+
+.btn-sm-tap {
+  padding: 3px 9px;
+  background: rgba(0, 255, 102, 0.15);
+  border: 1px solid rgba(0, 255, 102, 0.4);
+  color: var(--neon-green);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+
+.btn-sm-tap:active {
+  transform: scale(0.92);
+  background: var(--neon-green);
+  color: #000000;
+}
+
+.live-tempo-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--warning-amber);
+  color: #000000;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
+  animation: pulseTag 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseTag {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 0.5; }
+}
+
+/* ==========================================================================
+   6. DRAG AND DROP TÁCTIL (TOUCH & MOUSE REORDER)
+   ========================================================================== */
+
+.song-card.is-touch-dragging,
+.quick-reorder-item.is-touch-dragging,
+.show-song-item.is-touch-dragging {
+  opacity: 0.5;
+  background: rgba(56, 189, 248, 0.25) !important;
+  border-color: var(--neon-cyan) !important;
+  transform: scale(1.02);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+}
+
+.song-card.drag-over,
+.quick-reorder-item.drag-over,
+.show-song-item.drag-over {
+  border-top: 2px solid var(--neon-green) !important;
+  background: rgba(0, 255, 102, 0.12) !important;
+}
+
+.song-drag-handle,
+.reorder-drag-handle {
+  cursor: grab;
+  padding: 4px 6px;
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  touch-action: none;
+  user-select: none;
+}
+
+.song-drag-handle:active,
+.reorder-drag-handle:active {
+  cursor: grabbing;
+  color: var(--neon-green);
+}
+
+/* ==========================================================================
+   7. MODAL: SELECTOR DE CANCIONES DEL REPERTORIO
+   ========================================================================== */
+
+#picker-songs-modal-overlay .modal-content {
+  max-width: 650px;
+}
+
+.picker-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: #141418;
+  border: 1px solid #27272A;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.picker-songs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 48dvh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.picker-song-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #141418;
+  border: 1px solid #222226;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.picker-song-item:hover {
+  background: #1A1A20;
+  border-color: #33333C;
+}
+
+.picker-song-item.is-selected {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+.picker-checkbox {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--neon-cyan);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.picker-song-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.picker-song-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.picker-song-artist {
+  font-size: 0.8rem;
+  color: var(--neon-cyan);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.picker-song-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }

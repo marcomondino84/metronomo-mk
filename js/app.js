@@ -7,6 +7,12 @@ class AppController {
   constructor() {
     this.currentSong = null;
     this.editingSongId = null;
+    this.liveTempoBpm = null;
+    this.isCompactListView = window.storageManager.getSettings().compactListView || false;
+    this.pickerSelectedSongIds = new Set();
+    this.modalTapTimes = [];
+    this.modalTapTimer = null;
+    this.isCreatingFromShowBuilder = false;
     this.init();
   }
 
@@ -57,6 +63,7 @@ class AppController {
     this.loadActiveSong();
     this.setupEventListeners();
     this.setupKeyboardShortcuts();
+    this.updateListViewButtonUI();
     this.registerServiceWorker();
 
     // Iniciar Wake Lock por defecto si está configurado
@@ -70,6 +77,7 @@ class AppController {
   // =========================================================================
 
   loadActiveSong() {
+    this.liveTempoBpm = null;
     const song = window.storageManager.getActiveSong();
     if (!song) {
       // Si la banda no tiene canciones, crear una por defecto
@@ -91,7 +99,8 @@ class AppController {
   applySongToEngine(song) {
     if (!song) return;
 
-    window.audioEngine.setBpm(song.bpm);
+    const bpmToUse = this.liveTempoBpm || song.bpm;
+    window.audioEngine.setBpm(bpmToUse);
     window.audioEngine.setTimeSignature(song.timeSignature);
     window.visualEngine.reset(song.timeSignature.numerator);
   }
@@ -108,7 +117,17 @@ class AppController {
 
     if (titleEl) titleEl.textContent = this.currentSong.title;
     if (artistEl) artistEl.textContent = this.currentSong.artist || 'Sin artista';
-    if (bpmEl) bpmEl.textContent = `${this.currentSong.bpm} BPM`;
+    
+    if (bpmEl) {
+      if (this.liveTempoBpm) {
+        bpmEl.innerHTML = `${this.liveTempoBpm} BPM <span class="live-tempo-tag">EN VIVO</span>`;
+        bpmEl.title = `Tempo temporal en vivo (Guardado en repertorio: ${this.currentSong.bpm} BPM)`;
+      } else {
+        bpmEl.textContent = `${this.currentSong.bpm} BPM`;
+        bpmEl.title = 'BPM guardado en repertorio';
+      }
+    }
+
     if (metricEl) metricEl.textContent = this.currentSong.timeSignature.label || `${this.currentSong.timeSignature.numerator}/${this.currentSong.timeSignature.denominator}`;
 
     const activeBand = window.storageManager.getActiveBand();
@@ -154,6 +173,7 @@ class AppController {
   // =========================================================================
 
   nextSong() {
+    this.liveTempoBpm = null;
     const next = window.storageManager.getNextSong();
     if (next) {
       const wasPlaying = window.audioEngine.isPlaying;
@@ -168,6 +188,7 @@ class AppController {
   }
 
   previousSong() {
+    this.liveTempoBpm = null;
     const prev = window.storageManager.getPreviousSong();
     if (prev) {
       const wasPlaying = window.audioEngine.isPlaying;
@@ -187,19 +208,26 @@ class AppController {
 
   nudgeBpm(delta) {
     if (!this.currentSong) return;
-    const newBpm = Math.max(20, Math.min(400, this.currentSong.bpm + delta));
-    this.currentSong.bpm = newBpm;
-    window.storageManager.updateSong(this.currentSong.id, { bpm: newBpm });
-    window.audioEngine.setBpm(newBpm);
-    this.updateStageUI();
+    if (this.liveTempoBpm) {
+      this.liveTempoBpm = Math.max(20, Math.min(400, this.liveTempoBpm + delta));
+      window.audioEngine.setBpm(this.liveTempoBpm);
+      this.updateStageUI();
+    } else {
+      const newBpm = Math.max(20, Math.min(400, this.currentSong.bpm + delta));
+      this.currentSong.bpm = newBpm;
+      window.storageManager.updateSong(this.currentSong.id, { bpm: newBpm });
+      window.audioEngine.setBpm(newBpm);
+      this.updateStageUI();
+    }
   }
 
   updateTempoFromTap(bpm) {
     if (!this.currentSong || !bpm) return;
-    this.currentSong.bpm = bpm;
-    window.storageManager.updateSong(this.currentSong.id, { bpm: bpm });
+    // Cambio de velocidad temporal / en vivo sin sobrescribir el BPM guardado en repertorio
+    this.liveTempoBpm = bpm;
     window.audioEngine.setBpm(bpm);
     this.updateStageUI();
+    this.showToast(`⚡ Tempo en vivo: ${bpm} BPM (Original: ${this.currentSong.bpm} BPM)`);
   }
 
   // =========================================================================
@@ -236,16 +264,47 @@ class AppController {
     `).join('');
   }
 
+  toggleListViewMode() {
+    this.isCompactListView = !this.isCompactListView;
+    window.storageManager.saveSettings({ compactListView: this.isCompactListView });
+    this.updateListViewButtonUI();
+    this.renderSongsList();
+    this.showToast(this.isCompactListView ? '📑 Modo Lista Activado' : '🗂️ Modo Tarjetas Activado');
+  }
+
+  updateListViewButtonUI() {
+    const btn = document.getElementById('btn-toggle-list-view');
+    const icon = document.getElementById('list-toggle-icon');
+    const text = document.getElementById('list-toggle-text');
+    if (!btn) return;
+
+    if (this.isCompactListView) {
+      btn.classList.add('is-active');
+      if (icon) icon.textContent = '🗂️';
+      if (text) text.textContent = 'Modo Tarjetas';
+    } else {
+      btn.classList.remove('is-active');
+      if (icon) icon.textContent = '📑';
+      if (text) text.textContent = 'Modo Lista';
+    }
+  }
+
   renderSongsList() {
     const container = document.getElementById('songs-scroll-container');
     if (!container) return;
+
+    if (this.isCompactListView) {
+      container.classList.add('is-compact-mode');
+    } else {
+      container.classList.remove('is-compact-mode');
+    }
 
     const activeBand = window.storageManager.getActiveBand();
     if (!activeBand || !activeBand.songs || activeBand.songs.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; color: var(--text-dim); padding: 40px 20px;">
           <p style="font-size: 1.1rem; margin-bottom: 8px;">No hay canciones en este repertorio.</p>
-          <p style="font-size: 0.85rem;">Toca el botón "+ Nueva Canción" para agregar la primera.</p>
+          <p style="font-size: 0.85rem;">Toca "Elegir del Repertorio" o "+ Nueva Canción" para agregar temas.</p>
         </div>
       `;
       return;
@@ -253,11 +312,43 @@ class AppController {
 
     container.innerHTML = activeBand.songs.map((song, index) => {
       const isPlaying = (this.currentSong && this.currentSong.id === song.id);
+
+      if (this.isCompactListView) {
+        // MODO LISTA UNIVERSAL (Compacto, ergonómico y ultra legible)
+        return `
+          <div class="song-card song-compact-card ${isPlaying ? 'active-playing' : ''}" 
+               data-id="${song.id}" 
+               data-index="${index}"
+               onclick="window.appController.selectSongFromList('${song.id}')">
+            <div class="song-compact-row">
+              <div class="song-drag-handle" title="Arrastra para reordenar" onclick="event.stopPropagation();">☰</div>
+              <span class="song-index" onclick="event.stopPropagation(); window.appController.promptMoveSong('${song.id}', ${index + 1})" title="Toca para mover de posición">
+                ${String(index + 1).padStart(2, '0')}
+              </span>
+              <div class="song-details">
+                <span class="song-name" title="${song.title}">${song.title}</span>
+                <span class="song-sub">${song.artist ? song.artist : 'Sin artista'}</span>
+              </div>
+              <div class="song-meta-compact">
+                <span class="song-bpm-tag">${song.bpm} <small class="bpm-unit">BPM</small></span>
+                <span class="song-metric-tag">${song.timeSignature.label || `${song.timeSignature.numerator}/${song.timeSignature.denominator}`}</span>
+              </div>
+              <div class="song-compact-controls" onclick="event.stopPropagation();">
+                <button class="btn-icon-sm btn-reorder-nav" onclick="window.appController.moveSong('${song.id}', 'up')" title="Subir">▲</button>
+                <button class="btn-icon-sm btn-reorder-nav" onclick="window.appController.moveSong('${song.id}', 'down')" title="Bajar">▼</button>
+                <button class="btn-icon-sm" onclick="window.appController.openEditSongModal('${song.id}')" title="Editar">✏️</button>
+                <button class="btn-icon-sm btn-delete" onclick="window.appController.deleteSong('${song.id}')" title="Eliminar">🗑️</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // MODO TARJETAS (Detallado)
       return `
         <div class="song-card ${isPlaying ? 'active-playing' : ''}" 
              data-id="${song.id}" 
-             data-index="${index}"
-             draggable="true">
+             data-index="${index}">
           <div class="song-card-top" onclick="window.appController.selectSongFromList('${song.id}')">
             <div class="song-drag-handle" title="Mantén presionado para arrastrar">☰</div>
             <span class="song-index" onclick="event.stopPropagation(); window.appController.promptMoveSong('${song.id}', ${index + 1})" title="Toca para cambiar de posición directa">
@@ -288,50 +379,129 @@ class AppController {
       `;
     }).join('');
 
-    this.setupSongCardDragEvents(container);
+    this.setupUniversalDragAndDrop(container, '.song-card', (fromIdx, toIdx) => {
+      const activeBand = window.storageManager.getActiveBand();
+      if (!activeBand || !activeBand.songs) return;
+      const song = activeBand.songs[fromIdx];
+      if (song) {
+        window.storageManager.moveSongToPosition(song.id, toIdx);
+        this.renderSongsList();
+        this.showToast(`↕️ "${song.title}" movida a la posición #${toIdx + 1}`);
+      }
+    });
   }
 
-  setupSongCardDragEvents(container) {
+  setupUniversalDragAndDrop(container, itemSelector, onReorder) {
+    if (!container) return;
+    const items = container.querySelectorAll(itemSelector);
     let draggedItem = null;
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let isTouchDragging = false;
+    let touchCurrentOverItem = null;
 
-    const cards = container.querySelectorAll('.song-card');
-    cards.forEach(card => {
-      // Desktop HTML5 Drag & Drop
-      card.addEventListener('dragstart', (e) => {
-        draggedItem = card;
-        card.classList.add('dragging');
+    items.forEach((item, index) => {
+      // 1. Mouse / Desktop HTML5 Drag and Drop
+      item.setAttribute('draggable', 'true');
+
+      item.addEventListener('dragstart', (e) => {
+        draggedItem = item;
+        item.classList.add('is-touch-dragging');
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', card.getAttribute('data-id'));
+        e.dataTransfer.setData('text/plain', item.getAttribute('data-id') || index);
       });
 
-      card.addEventListener('dragend', () => {
-        card.classList.remove('dragging');
-        cards.forEach(c => c.classList.remove('drag-over'));
+      item.addEventListener('dragend', () => {
+        item.classList.remove('is-touch-dragging');
+        items.forEach(c => c.classList.remove('drag-over'));
         draggedItem = null;
       });
 
-      card.addEventListener('dragover', (e) => {
+      item.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        if (draggedItem && draggedItem !== card) {
-          card.classList.add('drag-over');
+        if (draggedItem && draggedItem !== item) {
+          items.forEach(c => c.classList.remove('drag-over'));
+          item.classList.add('drag-over');
         }
       });
 
-      card.addEventListener('dragleave', () => {
-        card.classList.remove('drag-over');
+      item.addEventListener('dragleave', () => {
+        item.classList.remove('drag-over');
       });
 
-      card.addEventListener('drop', (e) => {
+      item.addEventListener('drop', (e) => {
         e.preventDefault();
-        card.classList.remove('drag-over');
-        if (draggedItem && draggedItem !== card) {
-          const draggedId = draggedItem.getAttribute('data-id');
-          const targetIndex = parseInt(card.getAttribute('data-index'), 10);
-          window.storageManager.moveSongToPosition(draggedId, targetIndex);
-          this.renderSongsList();
-          this.showToast('↕️ Posición actualizada');
+        item.classList.remove('drag-over');
+        if (draggedItem && draggedItem !== item) {
+          const fromIdx = parseInt(draggedItem.getAttribute('data-index'), 10);
+          const toIdx = parseInt(item.getAttribute('data-index'), 10);
+          if (!isNaN(fromIdx) && !isNaN(toIdx) && fromIdx !== toIdx) {
+            onReorder(fromIdx, toIdx);
+          }
         }
+      });
+
+      // 2. Mobile Touch Drag and Drop (asa ☰ o pulsación prolongada)
+      const handle = item.querySelector('.song-drag-handle, .reorder-drag-handle') || item;
+
+      handle.addEventListener('touchstart', (e) => {
+        if (e.target.tagName === 'BUTTON' && !e.target.classList.contains('reorder-pos-btn')) return;
+        draggedItem = item;
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+        isTouchDragging = false;
+      }, { passive: true });
+
+      item.addEventListener('touchmove', (e) => {
+        if (!draggedItem || draggedItem !== item) return;
+
+        const touch = e.touches[0];
+        const deltaY = Math.abs(touch.clientY - touchStartY);
+        const deltaX = Math.abs(touch.clientX - touchStartX);
+
+        if (!isTouchDragging && deltaY > 7 && deltaY > deltaX) {
+          isTouchDragging = true;
+          draggedItem.classList.add('is-touch-dragging');
+          if (navigator.vibrate) navigator.vibrate(20);
+        }
+
+        if (isTouchDragging) {
+          if (e.cancelable) e.preventDefault();
+
+          const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+          const targetItem = elemBelow ? elemBelow.closest(itemSelector) : null;
+
+          if (targetItem && targetItem !== touchCurrentOverItem && targetItem.parentElement === container) {
+            items.forEach(c => c.classList.remove('drag-over'));
+            targetItem.classList.add('drag-over');
+            touchCurrentOverItem = targetItem;
+          }
+        }
+      }, { passive: false });
+
+      item.addEventListener('touchend', () => {
+        if (isTouchDragging && draggedItem && touchCurrentOverItem && draggedItem !== touchCurrentOverItem) {
+          const fromIdx = parseInt(draggedItem.getAttribute('data-index'), 10);
+          const toIdx = parseInt(touchCurrentOverItem.getAttribute('data-index'), 10);
+          if (!isNaN(fromIdx) && !isNaN(toIdx) && fromIdx !== toIdx) {
+            if (navigator.vibrate) navigator.vibrate(25);
+            onReorder(fromIdx, toIdx);
+          }
+        }
+        if (draggedItem) draggedItem.classList.remove('is-touch-dragging');
+        items.forEach(c => c.classList.remove('drag-over'));
+        draggedItem = null;
+        touchCurrentOverItem = null;
+        isTouchDragging = false;
+      });
+
+      item.addEventListener('touchcancel', () => {
+        if (draggedItem) draggedItem.classList.remove('is-touch-dragging');
+        items.forEach(c => c.classList.remove('drag-over'));
+        draggedItem = null;
+        touchCurrentOverItem = null;
+        isTouchDragging = false;
       });
     });
   }
@@ -404,6 +574,9 @@ class AppController {
       inputShowName.value = `${cleanBandName} - Show Vivo`;
     }
 
+    const searchInput = document.getElementById('input-show-builder-search');
+    if (searchInput) searchInput.value = '';
+
     this.renderShowBuilderLists();
     document.getElementById('show-builder-modal-overlay').classList.add('active');
   }
@@ -419,6 +592,8 @@ class AppController {
     const selectedContainer = document.getElementById('show-selected-songs-list');
     const availableContainer = document.getElementById('show-available-songs-list');
     const countTag = document.getElementById('show-builder-count-tag');
+    const searchInput = document.getElementById('input-show-builder-search');
+    const filterQuery = (searchInput ? searchInput.value.trim().toLowerCase() : '');
 
     if (countTag) {
       countTag.textContent = `${this.showBuilderSelectedIds.length} temas en el show`;
@@ -433,8 +608,9 @@ class AppController {
           const song = activeBand.songs.find(s => s.id === songId);
           if (!song) return '';
           return `
-            <div class="show-song-item is-selected">
+            <div class="show-song-item is-selected" data-index="${index}">
               <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                <div class="reorder-drag-handle" title="Arrastra para mover" style="font-size: 0.95rem; padding: 0 4px;">☰</div>
                 <span class="badge-count">#${index + 1}</span>
                 <span class="show-song-name">${song.title} <span class="show-song-sub">(${song.artist || 'Sin artista'})</span></span>
               </div>
@@ -447,27 +623,43 @@ class AppController {
             </div>
           `;
         }).join('');
+
+        this.setupUniversalDragAndDrop(selectedContainer, '.show-song-item', (fromIdx, toIdx) => {
+          const [removed] = this.showBuilderSelectedIds.splice(fromIdx, 1);
+          this.showBuilderSelectedIds.splice(toIdx, 0, removed);
+          this.renderShowBuilderLists();
+        });
       }
     }
 
-    // 2. Renderizar disponibles del catálogo
+    // 2. Renderizar disponibles del catálogo con filtro de búsqueda
     if (availableContainer) {
-      availableContainer.innerHTML = activeBand.songs.map((song) => {
-        const alreadyCount = this.showBuilderSelectedIds.filter(id => id === song.id).length;
-        return `
-          <div class="show-song-item">
-            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-              <span class="show-song-name">${song.title} <span class="show-song-sub">(${song.artist || 'Sin artista'})</span></span>
+      const filteredSongs = activeBand.songs.filter(song => {
+        if (!filterQuery) return true;
+        return (song.title && song.title.toLowerCase().includes(filterQuery)) ||
+               (song.artist && song.artist.toLowerCase().includes(filterQuery));
+      });
+
+      if (filteredSongs.length === 0) {
+        availableContainer.innerHTML = `<div class="empty-show-msg">No hay temas que coincidan con la búsqueda.</div>`;
+      } else {
+        availableContainer.innerHTML = filteredSongs.map((song) => {
+          const alreadyCount = this.showBuilderSelectedIds.filter(id => id === song.id).length;
+          return `
+            <div class="show-song-item">
+              <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                <span class="show-song-name">${song.title} <span class="show-song-sub">(${song.artist || 'Sin artista'})</span></span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                <span class="show-song-badge">${song.bpm} BPM</span>
+                <button type="button" class="btn-add-show-song" onclick="window.appController.addSongToShow('${song.id}')">
+                  + Agregar ${alreadyCount > 0 ? `(${alreadyCount})` : ''}
+                </button>
+              </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-              <span class="show-song-badge">${song.bpm} BPM</span>
-              <button type="button" class="btn-add-show-song" onclick="window.appController.addSongToShow('${song.id}')">
-                + Agregar ${alreadyCount > 0 ? `(${alreadyCount})` : ''}
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      }
     }
   }
 
@@ -519,7 +711,7 @@ class AppController {
   }
 
   // =========================================================================
-  // REORDENAMIENTO RÁPIDO DE REPERTORIO
+  // REORDENAMIENTO RÁPIDO DE REPERTORIO (DRAG & DROP TÁCTIL)
   // =========================================================================
 
   openQuickReorderModal() {
@@ -542,9 +734,10 @@ class AppController {
     const total = activeBand.songs.length;
     listContainer.innerHTML = activeBand.songs.map((song, index) => {
       return `
-        <div class="quick-reorder-item">
+        <div class="quick-reorder-item" data-id="${song.id}" data-index="${index}">
           <div class="reorder-item-left">
-            <button class="reorder-pos-btn" onclick="window.appController.promptMoveSong('${song.id}', ${index + 1}); window.appController.renderQuickReorderList();" title="Toca para cambiar de posición">
+            <div class="reorder-drag-handle" title="Mantén presionado para arrastrar">☰</div>
+            <button class="reorder-pos-btn" onclick="event.stopPropagation(); window.appController.promptMoveSong('${song.id}', ${index + 1}); window.appController.renderQuickReorderList();" title="Toca para saltar a posición">
               #${String(index + 1).padStart(2, '0')}
             </button>
             <div style="display: flex; flex-direction: column; min-width: 0;">
@@ -553,12 +746,157 @@ class AppController {
             </div>
           </div>
           <div class="reorder-arrows-group">
-            <button class="btn-icon-sm" onclick="window.appController.moveSong('${song.id}', 'up'); window.appController.renderQuickReorderList();" ${index === 0 ? 'disabled style="opacity: 0.3;"' : ''}>▲</button>
-            <button class="btn-icon-sm" onclick="window.appController.moveSong('${song.id}', 'down'); window.appController.renderQuickReorderList();" ${index === total - 1 ? 'disabled style="opacity: 0.3;"' : ''}>▼</button>
+            <button class="btn-icon-sm" onclick="event.stopPropagation(); window.appController.moveSong('${song.id}', 'up'); window.appController.renderQuickReorderList();" ${index === 0 ? 'disabled style="opacity: 0.3;"' : ''}>▲</button>
+            <button class="btn-icon-sm" onclick="event.stopPropagation(); window.appController.moveSong('${song.id}', 'down'); window.appController.renderQuickReorderList();" ${index === total - 1 ? 'disabled style="opacity: 0.3;"' : ''}>▼</button>
           </div>
         </div>
       `;
     }).join('');
+
+    // Conectar arrastre táctil y de mouse fluido
+    this.setupUniversalDragAndDrop(listContainer, '.quick-reorder-item', (fromIdx, toIdx) => {
+      const song = activeBand.songs[fromIdx];
+      if (song) {
+        window.storageManager.moveSongToPosition(song.id, toIdx);
+        this.renderQuickReorderList();
+        this.showToast(`↕️ "${song.title}" movida a la posición #${toIdx + 1}`);
+      }
+    });
+  }
+
+  // =========================================================================
+  // MODAL: SELECTOR DE CANCIONES DE REPERTORIO DE BANDA
+  // =========================================================================
+
+  openSongPickerModal() {
+    const activeBand = window.storageManager.getActiveBand();
+    const bands = window.storageManager.getBands();
+    if (!activeBand || bands.length === 0) return;
+
+    this.pickerSelectedSongIds = new Set();
+    const bandSelect = document.getElementById('picker-band-select');
+    if (bandSelect) {
+      bandSelect.innerHTML = bands.map(b => `
+        <option value="${b.id}" ${b.id === activeBand.id ? 'selected' : ''}>
+          ${b.name} (${b.songs ? b.songs.length : 0} temas)
+        </option>
+      `).join('');
+    }
+
+    const searchInput = document.getElementById('picker-search-input');
+    if (searchInput) searchInput.value = '';
+
+    this.renderSongPickerList();
+    document.getElementById('picker-songs-modal-overlay').classList.add('active');
+  }
+
+  closeSongPickerModal() {
+    document.getElementById('picker-songs-modal-overlay').classList.remove('active');
+  }
+
+  renderSongPickerList() {
+    const selectEl = document.getElementById('picker-band-select');
+    const searchInput = document.getElementById('picker-search-input');
+    const listContainer = document.getElementById('picker-songs-list');
+    const countTag = document.getElementById('picker-selected-count-tag');
+    const confirmBtn = document.getElementById('btn-confirm-picker-add');
+    if (!selectEl || !listContainer) return;
+
+    const sourceBandId = selectEl.value;
+    const bands = window.storageManager.getBands();
+    const sourceBand = bands.find(b => b.id === sourceBandId);
+    if (!sourceBand || !sourceBand.songs || sourceBand.songs.length === 0) {
+      listContainer.innerHTML = `<div class="empty-show-msg">No hay canciones en esta banda.</div>`;
+      if (countTag) countTag.textContent = '0 seleccionadas';
+      if (confirmBtn) confirmBtn.textContent = '➕ Agregar Seleccionadas al Setlist (0)';
+      return;
+    }
+
+    const filterQuery = (searchInput ? searchInput.value.trim().toLowerCase() : '');
+    const filteredSongs = sourceBand.songs.filter(s => {
+      if (!filterQuery) return true;
+      return (s.title && s.title.toLowerCase().includes(filterQuery)) ||
+             (s.artist && s.artist.toLowerCase().includes(filterQuery));
+    });
+
+    if (filteredSongs.length === 0) {
+      listContainer.innerHTML = `<div class="empty-show-msg">No se encontraron temas con "${filterQuery}".</div>`;
+    } else {
+      listContainer.innerHTML = filteredSongs.map((song) => {
+        const isSelected = this.pickerSelectedSongIds.has(song.id);
+        return `
+          <div class="picker-song-item ${isSelected ? 'is-selected' : ''}" onclick="window.appController.togglePickerSong('${song.id}')">
+            <input type="checkbox" class="picker-checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); window.appController.togglePickerSong('${song.id}')">
+            <div class="picker-song-info">
+              <span class="picker-song-title">${song.title}</span>
+              <span class="picker-song-artist">${song.artist || 'Sin artista'}</span>
+            </div>
+            <div class="picker-song-badges">
+              <span class="song-bpm-tag">${song.bpm} BPM</span>
+              <span class="song-metric-tag">${song.timeSignature.label || `${song.timeSignature.numerator}/${song.timeSignature.denominator}`}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    const count = this.pickerSelectedSongIds.size;
+    if (countTag) countTag.textContent = `${count} seleccionadas`;
+    if (confirmBtn) confirmBtn.textContent = `➕ Agregar Seleccionadas al Setlist (${count})`;
+  }
+
+  togglePickerSong(songId) {
+    if (this.pickerSelectedSongIds.has(songId)) {
+      this.pickerSelectedSongIds.delete(songId);
+    } else {
+      this.pickerSelectedSongIds.add(songId);
+    }
+    this.renderSongPickerList();
+  }
+
+  selectAllPickerSongs() {
+    const selectEl = document.getElementById('picker-band-select');
+    const searchInput = document.getElementById('picker-search-input');
+    if (!selectEl) return;
+    const sourceBand = window.storageManager.getBands().find(b => b.id === selectEl.value);
+    if (!sourceBand || !sourceBand.songs) return;
+
+    const filterQuery = (searchInput ? searchInput.value.trim().toLowerCase() : '');
+    sourceBand.songs.forEach(song => {
+      if (!filterQuery || (song.title && song.title.toLowerCase().includes(filterQuery)) || (song.artist && song.artist.toLowerCase().includes(filterQuery))) {
+        this.pickerSelectedSongIds.add(song.id);
+      }
+    });
+    this.renderSongPickerList();
+  }
+
+  deselectAllPickerSongs() {
+    this.pickerSelectedSongIds.clear();
+    this.renderSongPickerList();
+  }
+
+  confirmAddSongsFromPicker() {
+    if (this.pickerSelectedSongIds.size === 0) {
+      alert('Por favor selecciona al menos una canción para agregar.');
+      return;
+    }
+
+    const selectEl = document.getElementById('picker-band-select');
+    const sourceBand = window.storageManager.getBands().find(b => b.id === selectEl.value);
+    const activeBand = window.storageManager.getActiveBand();
+    if (!sourceBand || !activeBand) return;
+
+    const songsToAdd = [];
+    this.pickerSelectedSongIds.forEach(id => {
+      const song = sourceBand.songs.find(s => s.id === id);
+      if (song) songsToAdd.push(song);
+    });
+
+    const added = window.storageManager.addExistingSongsToBand(activeBand.id, songsToAdd);
+    this.closeSongPickerModal();
+    this.renderSongsList();
+    this.renderBandSelector();
+    this.showToast(`📂 ¡Se agregaron ${added.length} canciones al setlist!`);
   }
 
   // =========================================================================
@@ -567,6 +905,7 @@ class AppController {
 
   openAddSongModal() {
     this.editingSongId = null;
+    this.modalTapTimes = [];
     document.getElementById('modal-song-title-heading').textContent = 'Nueva Canción';
     document.getElementById('input-song-title').value = '';
     document.getElementById('input-song-artist').value = '';
@@ -576,7 +915,59 @@ class AppController {
     document.getElementById('input-song-notes').value = '';
     document.getElementById('ai-suggestion-container').innerHTML = '';
 
+    const tapBtn = document.getElementById('btn-modal-tap-tempo');
+    if (tapBtn) tapBtn.textContent = '🥁 Tap Tempo';
+
     document.getElementById('song-modal-overlay').classList.add('active');
+  }
+
+  handleModalTap() {
+    const now = performance.now();
+    if (!this.modalTapTimes) this.modalTapTimes = [];
+    if (this.modalTapTimer) clearTimeout(this.modalTapTimer);
+
+    if (this.modalTapTimes.length > 0 && (now - this.modalTapTimes[this.modalTapTimes.length - 1] > 2500)) {
+      this.modalTapTimes = [];
+    }
+
+    this.modalTapTimes.push(now);
+    if (this.modalTapTimes.length > 8) this.modalTapTimes.shift();
+
+    this.modalTapTimer = setTimeout(() => {
+      this.modalTapTimes = [];
+      const tapBtn = document.getElementById('btn-modal-tap-tempo');
+      if (tapBtn) tapBtn.textContent = '🥁 Tap Tempo';
+    }, 2500);
+
+    const tapBtn = document.getElementById('btn-modal-tap-tempo');
+
+    if (this.modalTapTimes.length >= 2) {
+      const intervals = [];
+      for (let i = 1; i < this.modalTapTimes.length; i++) {
+        intervals.push(this.modalTapTimes[i] - this.modalTapTimes[i - 1]);
+      }
+
+      let validIntervals = intervals;
+      if (intervals.length >= 4) {
+        const sorted = [...intervals].sort((a, b) => a - b);
+        validIntervals = sorted.slice(1, sorted.length - 1);
+      }
+
+      const avgInterval = validIntervals.reduce((sum, v) => sum + v, 0) / validIntervals.length;
+      let calculatedBpm = Math.round(60000 / avgInterval);
+      calculatedBpm = Math.max(20, Math.min(360, calculatedBpm));
+
+      const bpmInput = document.getElementById('input-song-bpm');
+      const bpmRange = document.getElementById('range-song-bpm');
+      if (bpmInput) bpmInput.value = calculatedBpm;
+      if (bpmRange) bpmRange.value = calculatedBpm;
+
+      if (tapBtn) tapBtn.textContent = `🥁 ${calculatedBpm} BPM`;
+    } else {
+      if (tapBtn) tapBtn.textContent = '🥁 Marcando...';
+    }
+
+    if (navigator.vibrate) navigator.vibrate(20);
   }
 
   openEditSongModal(songId) {
@@ -585,11 +976,15 @@ class AppController {
     if (!song) return;
 
     this.editingSongId = songId;
+    this.modalTapTimes = [];
     document.getElementById('modal-song-title-heading').textContent = 'Editar Canción';
     document.getElementById('input-song-title').value = song.title;
     document.getElementById('input-song-artist').value = song.artist || '';
     document.getElementById('input-song-bpm').value = song.bpm;
     document.getElementById('range-song-bpm').value = song.bpm;
+
+    const tapBtn = document.getElementById('btn-modal-tap-tempo');
+    if (tapBtn) tapBtn.textContent = `🥁 ${song.bpm} BPM`;
     
     // Métrica
     const metricStr = song.timeSignature.label || `${song.timeSignature.numerator}/${song.timeSignature.denominator}`;
@@ -610,6 +1005,7 @@ class AppController {
   }
 
   closeSongModal() {
+    this.isCreatingFromShowBuilder = false;
     document.getElementById('song-modal-overlay').classList.remove('active');
     document.getElementById('custom-metric-row').style.display = 'none';
   }
@@ -704,7 +1100,14 @@ class AppController {
       const newSong = window.storageManager.addSong(songData);
       this.currentSong = newSong;
       this.applySongToEngine(newSong);
-      this.showToast('✅ Canción agregada al setlist');
+
+      if (this.isCreatingFromShowBuilder) {
+        this.showBuilderSelectedIds.push(newSong.id);
+        this.renderShowBuilderLists();
+        this.showToast(`🎤 "${newSong.title}" agregada al show`);
+      } else {
+        this.showToast('✅ Canción agregada al setlist');
+      }
     }
 
     this.closeSongModal();
@@ -876,25 +1279,50 @@ class AppController {
     document.getElementById('btn-new-band')?.addEventListener('click', () => this.createNewBandPrompt());
     document.getElementById('btn-delete-band')?.addEventListener('click', () => this.deleteCurrentBand());
 
-    // Herramientas de Setlist (Armar Show / Reordenar)
+    // Herramientas de Setlist (Armar Show / Reordenar / Modo Lista)
     document.getElementById('btn-open-show-builder')?.addEventListener('click', () => this.openShowBuilderModal());
     document.getElementById('btn-close-show-builder')?.addEventListener('click', () => this.closeShowBuilderModal());
     document.getElementById('btn-cancel-show-builder')?.addEventListener('click', () => this.closeShowBuilderModal());
     document.getElementById('btn-save-show-setlist')?.addEventListener('click', () => this.saveShowSetlist());
     document.getElementById('btn-clear-show-selection')?.addEventListener('click', () => this.clearShowSelection());
+    document.getElementById('btn-show-builder-new-song')?.addEventListener('click', () => {
+      this.isCreatingFromShowBuilder = true;
+      this.openAddSongModal();
+    });
+    document.getElementById('input-show-builder-search')?.addEventListener('input', () => this.renderShowBuilderLists());
 
     document.getElementById('btn-open-quick-reorder')?.addEventListener('click', () => this.openQuickReorderModal());
     document.getElementById('btn-close-quick-reorder')?.addEventListener('click', () => this.closeQuickReorderModal());
     document.getElementById('btn-close-quick-reorder-done')?.addEventListener('click', () => this.closeQuickReorderModal());
 
-    // 10. Botón Flotante Agregar Canción
+    // Switch Modo Lista Universal
+    document.getElementById('btn-toggle-list-view')?.addEventListener('click', () => this.toggleListViewMode());
+
+    // 10. Botones Inferiores de Setlist (Agregar Canción y Elegir del Repertorio)
     document.getElementById('btn-floating-add-song')?.addEventListener('click', () => this.openAddSongModal());
+    document.getElementById('btn-open-picker-modal')?.addEventListener('click', () => this.openSongPickerModal());
+
+    // Modal Picker de Canciones del Repertorio
+    document.getElementById('btn-close-picker-modal')?.addEventListener('click', () => this.closeSongPickerModal());
+    document.getElementById('btn-cancel-picker-modal')?.addEventListener('click', () => this.closeSongPickerModal());
+    document.getElementById('picker-band-select')?.addEventListener('change', () => {
+      this.deselectAllPickerSongs();
+      this.renderSongPickerList();
+    });
+    document.getElementById('picker-search-input')?.addEventListener('input', () => this.renderSongPickerList());
+    document.getElementById('btn-picker-select-all')?.addEventListener('click', () => this.selectAllPickerSongs());
+    document.getElementById('btn-picker-deselect-all')?.addEventListener('click', () => this.deselectAllPickerSongs());
+    document.getElementById('btn-confirm-picker-add')?.addEventListener('click', () => this.confirmAddSongsFromPicker());
 
     // 11. Modal Canción
     document.getElementById('btn-close-song-modal')?.addEventListener('click', () => this.closeSongModal());
     document.getElementById('btn-cancel-song-modal')?.addEventListener('click', () => this.closeSongModal());
     document.getElementById('btn-save-song-modal')?.addEventListener('click', () => this.saveSongModal());
     document.getElementById('btn-ai-assist')?.addEventListener('click', () => this.runAIAssistant());
+    document.getElementById('btn-modal-tap-tempo')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.handleModalTap();
+    });
 
     // Slider BPM en Modal
     const modalBpmInput = document.getElementById('input-song-bpm');

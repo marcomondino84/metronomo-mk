@@ -140,21 +140,33 @@
       <!-- Barra de Herramientas Rápidas de Setlist -->
       <div class="setlist-tools-row">
         <button id="btn-open-show-builder" class="btn-tool-action btn-show-builder" title="Crear una lista personalizada para un show en vivo">
-          <span>🎤 Armar Setlist de Show</span>
+          <span class="tool-icon">🎤</span>
+          <span class="tool-text">Armar Show</span>
         </button>
         <button id="btn-open-quick-reorder" class="btn-tool-action btn-reorder" title="Reordenar temas rápidamente">
-          <span>⇄ Reordenar Rápido</span>
+          <span class="tool-icon">⇄</span>
+          <span class="tool-text">Reordenar</span>
+        </button>
+        <button id="btn-toggle-list-view" class="btn-tool-action btn-list-toggle" title="Alternar entre Vista Detallada y Modo Lista Compacto">
+          <span class="tool-icon" id="list-toggle-icon">📑</span>
+          <span class="tool-text" id="list-toggle-text">Modo Lista</span>
         </button>
       </div>
 
       <!-- Lista Scrollable de Canciones -->
       <div id="songs-scroll-container" class="songs-scroll-list"></div>
 
-      <!-- Botón Flotante para Agregar Canción -->
-      <button id="btn-floating-add-song" class="floating-add-btn">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-        Nueva Canción
-      </button>
+      <!-- Acciones de Setlist: Nueva Canción y Elegir del Repertorio -->
+      <div class="setlist-bottom-actions">
+        <button id="btn-open-picker-modal" class="btn-action-pill btn-picker-action" title="Seleccionar canciones existentes del repertorio">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+          <span class="picker-btn-text">Elegir del Repertorio</span>
+        </button>
+        <button id="btn-floating-add-song" class="btn-action-pill btn-new-song-action" title="Crear un tema nuevo desde cero">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          <span>Nueva Canción</span>
+        </button>
+      </div>
     </section>
 
     <!-- ====================================================================
@@ -186,7 +198,12 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>BPM (Tempo)</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="margin-bottom: 0;">BPM (Tempo)</label>
+              <button type="button" id="btn-modal-tap-tempo" class="btn-sm-tap" title="Toca repetidamente a ritmo para calcular el tempo">
+                🥁 Tap Tempo
+              </button>
+            </div>
             <input type="number" id="input-song-bpm" class="form-input" min="20" max="400" value="120">
           </div>
           <div class="form-group">
@@ -351,8 +368,14 @@
 
           <!-- Columna / Sección: Catálogo de canciones de la banda -->
           <div class="show-section-box">
-            <div class="section-title">
-              <span>📚 Repertorio Completo (Toca + para agregar)</span>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="section-title">📚 Repertorio de la Banda</span>
+              <button type="button" id="btn-show-builder-new-song" class="btn-sm-action" style="font-size: 0.76rem; padding: 3px 8px;" title="Crear tema nuevo y agregarlo al show">
+                + Nueva Canción
+              </button>
+            </div>
+            <div style="margin-top: 2px;">
+              <input type="text" id="input-show-builder-search" class="form-input" style="padding: 6px 10px; font-size: 0.85rem;" placeholder="🔍 Filtrar temas por nombre o artista...">
             </div>
             <div id="show-available-songs-list" class="show-available-songs-list"></div>
           </div>
@@ -375,7 +398,7 @@
         <div class="modal-header">
           <div>
             <h3 style="font-size: 1.2rem; font-weight: 900; color: var(--neon-cyan);">⇄ Reordenar Repertorio</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Mueve canciones arriba/abajo o salta directamente de posición</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Arrastra manteniendo presionado o usa las flechas</p>
           </div>
           <button id="btn-close-quick-reorder" class="close-modal-btn">✕</button>
         </div>
@@ -385,6 +408,47 @@
         <div class="modal-actions-grid" style="margin-top: 10px;">
           <button id="btn-close-quick-reorder-done" type="button" class="btn-primary">
             ✓ Guardar Orden
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         7. MODAL: ELEGIR CANCIONES DEL REPERTORIO DE BANDA
+         ==================================================================== -->
+    <div id="picker-songs-modal-overlay" class="modal-overlay">
+      <div class="modal-content modal-content-large">
+        <div class="modal-header">
+          <div>
+            <h3 style="font-size: 1.2rem; font-weight: 900; color: var(--neon-cyan);">📂 Elegir del Repertorio</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Selecciona canciones existentes para agregarlas al setlist actual</p>
+          </div>
+          <button id="btn-close-picker-modal" class="close-modal-btn">✕</button>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label style="font-size: 0.8rem; color: var(--text-muted);">Banda / Repertorio de origen:</label>
+          <select id="picker-band-select" class="form-input"></select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 8px;">
+          <input type="text" id="picker-search-input" class="form-input" placeholder="🔍 Buscar por canción o artista...">
+        </div>
+
+        <div class="picker-controls-row">
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="btn-picker-select-all" class="btn-sm-action" style="font-size: 0.78rem; padding: 4px 8px;">Marcar todas</button>
+            <button type="button" id="btn-picker-deselect-all" class="btn-sm-action" style="font-size: 0.78rem; padding: 4px 8px;">Desmarcar</button>
+          </div>
+          <span id="picker-selected-count-tag" class="badge-count" style="color: var(--neon-cyan);">0 seleccionadas</span>
+        </div>
+
+        <div id="picker-songs-list" class="picker-songs-list"></div>
+
+        <div class="modal-actions-grid" style="margin-top: 12px;">
+          <button id="btn-cancel-picker-modal" type="button" class="btn-secondary">Cancelar</button>
+          <button id="btn-confirm-picker-add" type="button" class="btn-primary" style="background: var(--neon-cyan); color: #000; font-weight: 900;">
+            ➕ Agregar Seleccionadas al Setlist
           </button>
         </div>
       </div>
