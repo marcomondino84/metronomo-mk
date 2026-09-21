@@ -1,5 +1,5 @@
-// Metrónomo MK - Service Worker v1.0.6
-const CACHE_NAME = 'metronomo-mk-v1.0.6';
+// Metrónomo MK - Service Worker v1.0.7
+const CACHE_NAME = 'metronomo-mk-v1.0.7';
 
 const ASSETS_TO_CACHE = [
   './',
