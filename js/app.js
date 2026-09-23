@@ -1383,11 +1383,27 @@ class AppController {
       }
     });
 
-    // Listeners del Editor de Batería en el Modal
-    document.getElementById('drum-editor-toggle-header')?.addEventListener('click', () => {
-      this.toggleDrumEditorCollapse();
+    // Sincronización bidireccional de notas del tema y anotación del machete
+    const songNotesEl = document.getElementById('input-song-notes');
+    const drumNotesEl = document.getElementById('input-drum-annotation');
+
+    songNotesEl?.addEventListener('input', (e) => {
+      if (drumNotesEl) drumNotesEl.value = e.target.value;
+      if (this.currentEditDrumPattern) {
+        this.currentEditDrumPattern.annotation = e.target.value;
+        this.renderDrumPreview();
+      }
     });
 
+    drumNotesEl?.addEventListener('input', (e) => {
+      if (songNotesEl) songNotesEl.value = e.target.value;
+      if (this.currentEditDrumPattern) {
+        this.currentEditDrumPattern.annotation = e.target.value;
+        this.renderDrumPreview();
+      }
+    });
+
+    // Botones del Editor de Batería en el Modal
     document.getElementById('btn-drum-bar-1')?.addEventListener('click', () => this.setDrumBars(1));
     document.getElementById('btn-drum-bar-2')?.addEventListener('click', () => this.setDrumBars(2));
 
@@ -1399,13 +1415,6 @@ class AppController {
     });
 
     document.getElementById('btn-clear-drum-pattern')?.addEventListener('click', () => this.clearDrumPattern());
-
-    document.getElementById('input-drum-annotation')?.addEventListener('input', (e) => {
-      if (this.currentEditDrumPattern) {
-        this.currentEditDrumPattern.annotation = e.target.value;
-        this.renderDrumPreview();
-      }
-    });
 
     // 12. Modal Ajustes (Accesible desde Escenario y desde Setlist)
     document.getElementById('btn-open-settings')?.addEventListener('click', () => this.openSettingsModal());
@@ -1493,6 +1502,7 @@ class AppController {
   updateDrumCheatSheetLiveUI() {
     const cheatSheetEl = document.getElementById('stage-drum-cheat-sheet');
     const cheatRenderEl = document.getElementById('stage-drum-score-render');
+    const cheatNotesEl = document.getElementById('stage-drum-notes-text');
     const toggleCheatBtn = document.getElementById('btn-toggle-drum-cheat');
 
     if (!this.currentSong) {
@@ -1500,10 +1510,12 @@ class AppController {
       return;
     }
 
+    const hasNotes = !!(this.currentSong.notes && this.currentSong.notes.trim());
     const hasPattern = !!(this.currentSong.drumPattern && this.currentSong.drumPattern.tracks);
+    const hasCheatContent = hasNotes || hasPattern;
 
     if (toggleCheatBtn) {
-      if (hasPattern) {
+      if (hasCheatContent) {
         toggleCheatBtn.style.opacity = '1';
         toggleCheatBtn.className = 'icon-btn ' + (this.showDrumCheatSheetLive ? 'active-green' : 'active-muted');
         toggleCheatBtn.title = this.showDrumCheatSheetLive
@@ -1512,24 +1524,46 @@ class AppController {
       } else {
         toggleCheatBtn.className = 'icon-btn';
         toggleCheatBtn.style.opacity = '0.35';
-        toggleCheatBtn.title = 'Este tema no tiene machete rítmico configurado (Edita el tema para agregarlo)';
+        toggleCheatBtn.title = 'Este tema no tiene machete rítmico ni notas (Edita el tema para agregarlas)';
       }
     }
 
-    if (hasPattern && this.showDrumCheatSheetLive && cheatSheetEl && cheatRenderEl) {
+    if (hasCheatContent && this.showDrumCheatSheetLive && cheatSheetEl) {
       cheatSheetEl.style.display = 'block';
-      cheatRenderEl.innerHTML = window.drumNotationEngine.renderToSVG(this.currentSong.drumPattern, {
-        width: (this.currentSong.drumPattern.bars === 1 ? 460 : 700),
-        height: 100
-      });
+
+      // Mostrar texto de notas si existe
+      if (cheatNotesEl) {
+        if (hasNotes) {
+          cheatNotesEl.textContent = `💡 ${this.currentSong.notes.trim()}`;
+          cheatNotesEl.style.display = 'block';
+        } else {
+          cheatNotesEl.style.display = 'none';
+        }
+      }
+
+      // Mostrar partitura SVG si existe
+      if (cheatRenderEl) {
+        if (hasPattern && window.drumNotationEngine) {
+          cheatRenderEl.innerHTML = window.drumNotationEngine.renderToSVG(this.currentSong.drumPattern, {
+            width: (this.currentSong.drumPattern.bars === 1 ? 460 : 700),
+            height: 100
+          });
+          cheatRenderEl.style.display = 'flex';
+        } else {
+          cheatRenderEl.innerHTML = '';
+          cheatRenderEl.style.display = 'none';
+        }
+      }
     } else if (cheatSheetEl) {
       cheatSheetEl.style.display = 'none';
     }
   }
 
   toggleDrumCheatLive() {
-    if (!this.currentSong || !this.currentSong.drumPattern) {
-      this.showToast('ℹ️ Este tema no tiene machete rítmico. Puedes crearlo al editar la canción.');
+    const hasNotes = !!(this.currentSong && this.currentSong.notes && this.currentSong.notes.trim());
+    const hasPattern = !!(this.currentSong && this.currentSong.drumPattern && this.currentSong.drumPattern.tracks);
+    if (!hasNotes && !hasPattern) {
+      this.showToast('ℹ️ Este tema no tiene machete rítmico ni notas. Puedes agregarlas al editar la canción.');
       return;
     }
     this.showDrumCheatSheetLive = !this.showDrumCheatSheetLive;
@@ -1539,17 +1573,8 @@ class AppController {
   }
 
   initDrumEditor(songPattern = null, numerator = 4) {
-    const card = document.getElementById('drum-editor-card') || document.querySelector('.drum-editor-card');
     const num = numerator || (this.currentSong ? this.currentSong.timeSignature.numerator : 4);
     
-    const hasExistingPattern = !!(songPattern && songPattern.tracks && (
-      (songPattern.tracks.hihat && songPattern.tracks.hihat.some(v => v === 1)) ||
-      (songPattern.tracks.snare && songPattern.tracks.snare.some(v => v === 1)) ||
-      (songPattern.tracks.kick && songPattern.tracks.kick.some(v => v === 1)) ||
-      (songPattern.tracks.tom && songPattern.tracks.tom.some(v => v === 1)) ||
-      (songPattern.annotation && songPattern.annotation.trim())
-    ));
-
     if (songPattern && songPattern.tracks) {
       this.currentEditDrumPattern = JSON.parse(JSON.stringify(songPattern));
       if (!this.currentEditDrumPattern.numerator) this.currentEditDrumPattern.numerator = num;
@@ -1564,21 +1589,6 @@ class AppController {
       };
     }
 
-    // Si la canción ya cuenta con un machete rítmico, abrirlo desplegado automáticamente
-    if (card) {
-      const subText = document.getElementById('drum-editor-subtitle-text');
-      const badge = document.getElementById('drum-editor-toggle-badge');
-      if (hasExistingPattern) {
-        card.classList.remove('collapsed');
-        if (subText) subText.textContent = 'Patrón o intro de 1 o 2 compases (Toca para ocultar)';
-        if (badge) badge.textContent = 'Ocultar';
-      } else {
-        card.classList.add('collapsed');
-        if (subText) subText.textContent = 'Patrón o intro de 1 o 2 compases (Toca para desplegar)';
-        if (badge) badge.textContent = 'Desplegar';
-      }
-    }
-
     // Actualizar botones de compases (1 o 2)
     const btn1 = document.getElementById('btn-drum-bar-1');
     const btn2 = document.getElementById('btn-drum-bar-2');
@@ -1587,46 +1597,16 @@ class AppController {
       btn2.className = 'drum-bar-btn ' + (this.currentEditDrumPattern.bars === 2 ? 'active' : '');
     }
 
-    // Actualizar input de anotación
+    // Sincronizar input de anotación
+    const notesVal = document.getElementById('input-song-notes')?.value || '';
     const annotationInput = document.getElementById('input-drum-annotation');
     if (annotationInput) {
-      annotationInput.value = this.currentEditDrumPattern.annotation || '';
+      annotationInput.value = this.currentEditDrumPattern.annotation || notesVal;
+      this.currentEditDrumPattern.annotation = annotationInput.value;
     }
 
     this.renderDrumMatrix();
     this.renderDrumPreview();
-  }
-
-  toggleDrumEditorCollapse(e) {
-    if (e) {
-      if (typeof e.stopPropagation === 'function') e.stopPropagation();
-      if (typeof e.preventDefault === 'function') e.preventDefault();
-    }
-    const card = document.getElementById('drum-editor-card') || document.querySelector('.drum-editor-card');
-    if (!card) return;
-
-    const isCollapsed = card.classList.toggle('collapsed');
-    
-    // Actualizar badge y subtítulo
-    const subText = document.getElementById('drum-editor-subtitle-text');
-    const badge = document.getElementById('drum-editor-toggle-badge');
-    
-    if (subText) {
-      subText.textContent = isCollapsed
-        ? 'Patrón o intro de 1 o 2 compases (Toca para desplegar)'
-        : 'Patrón o intro de 1 o 2 compases (Toca para ocultar)';
-    }
-    if (badge) {
-      badge.textContent = isCollapsed ? 'Desplegar' : 'Ocultar';
-    }
-
-    if (!isCollapsed) {
-      this.renderDrumMatrix();
-      this.renderDrumPreview();
-      setTimeout(() => {
-        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 50);
-    }
   }
 
   setDrumBars(bars) {

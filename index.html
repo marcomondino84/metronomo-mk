@@ -92,6 +92,7 @@
             </div>
             <button id="btn-close-cheat-sheet" class="drum-cheat-close" title="Ocultar machete en vivo">✕</button>
           </div>
+          <div id="stage-drum-notes-text" class="stage-drum-notes-text" style="display: none;"></div>
           <div id="stage-drum-score-render" class="stage-drum-score-render"></div>
         </div>
 
@@ -266,18 +267,14 @@
         <!-- ================================================================
              SECCIÓN: MACHETE RÍTMICO / PARTITURA DE BATERÍA (1 O 2 COMPASES)
              ================================================================ -->
-        <div class="drum-editor-card collapsed" id="drum-editor-card">
-          <div class="drum-editor-header" id="drum-editor-toggle-header" onclick="window.appController?.toggleDrumEditorCollapse(event)" style="cursor: pointer;" title="Toca para desplegar u ocultar el editor de machete rítmico">
+        <div class="drum-editor-card" id="drum-editor-card">
+          <div class="drum-editor-header" id="drum-editor-toggle-header">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 1.15rem;">🥁</span>
+              <span style="font-size: 1.25rem;">🥁</span>
               <div>
-                <span class="drum-editor-title">Machete Rítmico / Partitura</span>
-                <span class="drum-editor-subtitle" id="drum-editor-subtitle-text">Patrón o intro de 1 o 2 compases (Toca para desplegar)</span>
+                <span class="drum-editor-title">Partitura & Machete Rítmico</span>
+                <span class="drum-editor-subtitle">Patrón visual de 1 o 2 compases y presets para escenario</span>
               </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="drum-editor-badge" id="drum-editor-toggle-badge">Desplegar</span>
-              <span id="drum-editor-collapse-icon" class="drum-editor-arrow">▼</span>
             </div>
           </div>
 
