@@ -1,5 +1,5 @@
-// Metrónomo MK - Service Worker v1.0.9
-const CACHE_NAME = 'metronomo-mk-v1.0.9';
+// Metrónomo MK - Service Worker v1.1.0
+const CACHE_NAME = 'metronomo-mk-v1.1.0';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -8,6 +8,7 @@ const ASSETS_TO_CACHE = [
   './css/styles.css',
   './js/wake-lock.js',
   './js/storage.js',
+  './js/drum-notation.js',
   './js/audio-engine.js',
   './js/visual-engine.js',
   './js/tap-tempo.js',

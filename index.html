@@ -51,6 +51,9 @@
           <button id="wakelock-badge" class="wakelock-badge" title="Pantalla Siempre Encendida (Screen Wake Lock)">
             ⚡
           </button>
+          <button id="btn-toggle-drum-cheat" class="icon-btn active-green" title="Ver / Ocultar Machete Rítmico en Vivo">
+            🥁
+          </button>
           <button id="btn-toggle-audio" class="icon-btn active-muted" title="Sonido Silenciado por defecto (Toca para activar click)">
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27l4.73 4.73H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
           </button>
@@ -78,6 +81,18 @@
           <span id="stage-song-index-tag" class="stage-song-index-tag">TEMA 1 DE 6</span>
           <h1 id="stage-song-title" class="stage-song-title">Cargando...</h1>
           <h2 id="stage-song-artist" class="stage-song-artist">Metrónomo MK</h2>
+        </div>
+
+        <!-- Machete Rítmico / Partitura de Batería en Vivo (Semitransparente con Blur) -->
+        <div id="stage-drum-cheat-sheet" class="stage-drum-cheat-card" style="display: none;" onclick="event.stopPropagation();">
+          <div class="drum-cheat-header">
+            <div class="drum-cheat-title-group">
+              <span class="drum-cheat-icon">🥁</span>
+              <span class="drum-cheat-title">Machete Rítmico</span>
+            </div>
+            <button id="btn-close-cheat-sheet" class="drum-cheat-close" title="Ocultar machete en vivo">✕</button>
+          </div>
+          <div id="stage-drum-score-render" class="stage-drum-score-render"></div>
         </div>
 
         <div class="beat-display-wrapper">
@@ -246,6 +261,69 @@
         <div class="form-group">
           <label>Notas de Batería / Estructura (Opcional)</label>
           <input type="text" id="input-song-notes" class="form-input" placeholder="ej. Entra con redoble de caja en compás 4">
+        </div>
+
+        <!-- ================================================================
+             SECCIÓN: MACHETE RÍTMICO / PARTITURA DE BATERÍA (1 O 2 COMPASES)
+             ================================================================ -->
+        <div class="drum-editor-card">
+          <div class="drum-editor-header" id="drum-editor-toggle-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.15rem;">🥁</span>
+              <div>
+                <span class="drum-editor-title">Machete Rítmico / Partitura</span>
+                <span class="drum-editor-subtitle">Patrón o intro de 1 o 2 compases</span>
+              </div>
+            </div>
+            <span id="drum-editor-collapse-icon" class="drum-editor-arrow">▼</span>
+          </div>
+
+          <div id="drum-editor-body" class="drum-editor-body">
+            <!-- Barra de Opciones y Presets -->
+            <div class="drum-tools-row">
+              <div class="drum-bars-pill">
+                <button type="button" id="btn-drum-bar-1" class="drum-bar-btn active">1 Compás</button>
+                <button type="button" id="btn-drum-bar-2" class="drum-bar-btn">2 Compases</button>
+              </div>
+
+              <select id="select-drum-preset" class="form-input drum-preset-dropdown">
+                <option value="">⚡ Elegir Preset...</option>
+                <option value="rock-standard">🥁 Rock Clásico (Bombo 1/3, Caja 2/4)</option>
+                <option value="four-on-floor">⚡ Cuatro al Piso / Disco Funk</option>
+                <option value="rock-heavy">🎸 Rock Pesado / Doble Bombo</option>
+                <option value="intro-fill">🥁 Redoble / Fill de Entrada (2 compases)</option>
+                <option value="half-time">🎵 Medio Tiempo / Balada</option>
+                <option value="ternary-3-4">📐 Compás 3/4 (Vals / Ternario)</option>
+                <option value="break-entry">🛑 Corte / Entrada en 4</option>
+              </select>
+
+              <button type="button" id="btn-clear-drum-pattern" class="btn-sm-action" style="color: var(--danger-red); border-color: rgba(239, 68, 68, 0.3);" title="Limpiar grilla de batería">
+                Limpiar
+              </button>
+            </div>
+
+            <!-- Grilla Interactiva de Pasos -->
+            <div class="drum-grid-wrapper">
+              <div class="drum-grid-labels">
+                <div class="drum-row-label" title="Platillo / Hi-Hat">Hi-Hat ✕</div>
+                <div class="drum-row-label" title="Redoblante / Caja">Caja ●</div>
+                <div class="drum-row-label" title="Bombo">Bombo ●</div>
+                <div class="drum-row-label" title="Tom / Relleno">Tom ●</div>
+              </div>
+              <div id="drum-matrix-container" class="drum-matrix-container"></div>
+            </div>
+
+            <!-- Anotación de Texto para el Machete -->
+            <div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+              <input type="text" id="input-drum-annotation" class="form-input" style="font-size: 0.82rem; padding: 6px 10px;" placeholder="Indicación para el machete (ej. 'Entra en el compás 4 con crash')">
+            </div>
+
+            <!-- Previsualización en Vivo del Pentagrama SVG -->
+            <div class="drum-preview-box">
+              <div class="drum-preview-label">Vista Previa de Partitura (SVG Nítido):</div>
+              <div id="drum-preview-render" class="drum-preview-render"></div>
+            </div>
+          </div>
         </div>
 
         <div class="modal-actions">
@@ -462,6 +540,7 @@
   <!-- JavaScript Modules -->
   <script src="./js/wake-lock.js"></script>
   <script src="./js/storage.js"></script>
+  <script src="./js/drum-notation.js"></script>
   <script src="./js/audio-engine.js"></script>
   <script src="./js/visual-engine.js"></script>
   <script src="./js/tap-tempo.js"></script>

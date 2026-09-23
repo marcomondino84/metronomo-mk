@@ -2052,3 +2052,325 @@ input:checked + .slider-toggle:before {
   gap: 6px;
   flex-shrink: 0;
 }
+
+/* ==========================================================================
+   MACHETE RÍTMICO / PARTITURA DE BATERÍA (STAGE VIEW & MODAL EDITOR)
+   ========================================================================== */
+
+/* Tarjeta Semitransparente en el Escenario */
+.stage-drum-cheat-card {
+  position: relative;
+  z-index: 21;
+  width: calc(100% - 24px);
+  max-width: 600px;
+  margin: 2px auto 6px auto;
+  padding: 8px 12px;
+  background: rgba(12, 12, 18, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75);
+  pointer-events: auto;
+  animation: fadeInCheat 0.2s ease-out;
+  transition: all 0.25s ease;
+}
+
+@keyframes fadeInCheat {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.drum-cheat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.drum-cheat-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drum-cheat-icon {
+  font-size: 0.95rem;
+}
+
+.drum-cheat-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.drum-cheat-close {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.15s ease;
+}
+
+.drum-cheat-close:hover, .drum-cheat-close:active {
+  color: #FFFFFF;
+  background: rgba(239, 68, 68, 0.3);
+  border-color: var(--danger-red);
+}
+
+.stage-drum-score-render {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  justify-content: center;
+}
+
+.stage-drum-score-render svg,
+.drum-preview-render svg {
+  width: 100%;
+  height: auto;
+  max-height: 100px;
+  display: block;
+}
+
+/* Editor de Batería en el Modal de Canción */
+.drum-editor-card {
+  background: #141419;
+  border: 1px solid #272730;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.drum-editor-card:focus-within {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.drum-editor-header {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  user-select: none;
+}
+
+.drum-editor-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.drum-editor-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  display: block;
+}
+
+.drum-editor-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.drum-editor-arrow {
+  font-size: 0.8rem;
+  color: var(--neon-cyan);
+  transition: transform 0.2s ease;
+}
+
+.drum-editor-card.collapsed .drum-editor-arrow {
+  transform: rotate(-90deg);
+}
+
+.drum-editor-card.collapsed .drum-editor-body {
+  display: none;
+}
+
+.drum-editor-body {
+  padding: 10px 12px;
+  border-top: 1px solid #23232C;
+}
+
+.drum-tools-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.drum-bars-pill {
+  display: flex;
+  background: #0E0E12;
+  border: 1px solid #282833;
+  border-radius: 8px;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.drum-bar-btn {
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border-radius: 6px;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+}
+
+.drum-bar-btn.active {
+  background: var(--neon-cyan);
+  color: #000000;
+  font-weight: 800;
+}
+
+.drum-preset-dropdown {
+  flex: 1;
+  min-width: 140px;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+  height: 32px;
+}
+
+/* Grilla Matricial de Pasos de Batería */
+.drum-grid-wrapper {
+  display: flex;
+  gap: 6px;
+  background: #0A0A0E;
+  border: 1px solid #22222C;
+  border-radius: 10px;
+  padding: 8px 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.drum-grid-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  justify-content: space-around;
+  padding-right: 4px;
+  border-right: 1px solid #22222C;
+}
+
+.drum-row-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  height: 28px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.drum-matrix-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.drum-matrix-row {
+  display: flex;
+  gap: 3px;
+  height: 28px;
+  align-items: center;
+}
+
+.drum-cell-btn {
+  flex: 1;
+  min-width: 18px;
+  max-width: 32px;
+  height: 26px;
+  border-radius: 4px;
+  background: #181820;
+  border: 1px solid #2A2A38;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drum-cell-btn:active {
+  transform: scale(0.92);
+}
+
+/* Marca de tiempo fuerte / pulso principal */
+.drum-cell-btn.beat-accent {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: #1F1F2C;
+}
+
+/* Estados activos por instrumento */
+.drum-cell-btn.active.hihat {
+  background: var(--neon-cyan);
+  border-color: #67E8F9;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+.drum-cell-btn.active.snare {
+  background: #FFFFFF;
+  border-color: #FFFFFF;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+}
+
+.drum-cell-btn.active.kick {
+  background: var(--neon-green);
+  border-color: #4ADE80;
+  box-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
+}
+
+.drum-cell-btn.active.tom {
+  background: var(--accent-purple);
+  border-color: #C084FC;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+}
+
+/* Divisor visual entre compases en la grilla */
+.drum-cell-btn.bar-divider-left {
+  margin-left: 6px;
+  border-left: 2px solid var(--neon-green);
+}
+
+/* Previsualización en Vivo de la Partitura */
+.drum-preview-box {
+  margin-top: 8px;
+  background: #09090D;
+  border: 1px solid #232330;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.drum-preview-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+
+.drum-preview-render {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+

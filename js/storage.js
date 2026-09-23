@@ -18,7 +18,8 @@ const DEFAULT_SETTINGS = {
   wakeLockAuto: true,             // Mantener pantalla encendida automáticamente
   accentFrequency: 1600,          // Tono pulso 1 (agudo penetrante)
   beatFrequency: 900,             // Tono pulsos secundarios
-  compactListView: false          // Modo lista universal compacto
+  compactListView: false,         // Modo lista universal compacto
+  showDrumCheatSheetLive: true    // Visualizar machete rítmico en pantalla de escenario si el tema lo tiene
 };
 
 const DEMO_BANDS = [
@@ -297,7 +298,8 @@ class StorageManager {
       artist: (songData.artist || '').trim(),
       bpm: parseInt(songData.bpm, 10) || 120,
       timeSignature: songData.timeSignature || { numerator: 4, denominator: 4, label: '4/4' },
-      notes: (songData.notes || '').trim()
+      notes: (songData.notes || '').trim(),
+      drumPattern: songData.drumPattern || null
     };
 
     currentBand.songs.push(newSong);
@@ -316,6 +318,7 @@ class StorageManager {
       if (songData.bpm !== undefined) song.bpm = Math.max(20, Math.min(400, parseInt(songData.bpm, 10) || 120));
       if (songData.timeSignature !== undefined) song.timeSignature = songData.timeSignature;
       if (songData.notes !== undefined) song.notes = songData.notes.trim();
+      if (songData.drumPattern !== undefined) song.drumPattern = songData.drumPattern;
 
       this._saveBands();
       return song;
@@ -433,7 +436,8 @@ class StorageManager {
         artist: (sourceSong.artist || '').trim(),
         bpm: parseInt(sourceSong.bpm, 10) || 120,
         timeSignature: sourceSong.timeSignature ? { ...sourceSong.timeSignature } : { numerator: 4, denominator: 4, label: '4/4' },
-        notes: (sourceSong.notes || '').trim()
+        notes: (sourceSong.notes || '').trim(),
+        drumPattern: sourceSong.drumPattern ? JSON.parse(JSON.stringify(sourceSong.drumPattern)) : null
       };
       targetBand.songs.push(newSong);
       addedSongs.push(newSong);
@@ -491,7 +495,8 @@ class StorageManager {
               artist: song.artist || '',
               bpm: parseInt(song.bpm, 10) || 120,
               timeSignature: song.timeSignature || { numerator: 4, denominator: 4, label: '4/4' },
-              notes: song.notes || ''
+              notes: song.notes || '',
+              drumPattern: song.drumPattern || null
             })) : []
           }));
 

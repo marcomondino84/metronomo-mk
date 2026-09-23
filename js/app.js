@@ -13,6 +13,8 @@ class AppController {
     this.modalTapTimes = [];
     this.modalTapTimer = null;
     this.isCreatingFromShowBuilder = false;
+    this.currentEditDrumPattern = null;
+    this.showDrumCheatSheetLive = window.storageManager.getSettings().showDrumCheatSheetLive !== false;
     this.init();
   }
 
@@ -153,6 +155,9 @@ class AppController {
         ? '<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>'
         : '<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27l4.73 4.73H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>';
     }
+
+    // Machete Rítmico en Escenario en Vivo (Sutil, Semitransparente con Blur)
+    this.updateDrumCheatSheetLiveUI();
   }
 
   updatePlayStateUI(isPlaying) {
@@ -915,6 +920,9 @@ class AppController {
     document.getElementById('input-song-notes').value = '';
     document.getElementById('ai-suggestion-container').innerHTML = '';
 
+    // Inicializar editor de machete rítmico para nueva canción
+    this.initDrumEditor(null, 4);
+
     const tapBtn = document.getElementById('btn-modal-tap-tempo');
     if (tapBtn) tapBtn.textContent = '🥁 Tap Tempo';
 
@@ -1000,6 +1008,9 @@ class AppController {
 
     document.getElementById('input-song-notes').value = song.notes || '';
     document.getElementById('ai-suggestion-container').innerHTML = '';
+
+    // Cargar patrón de batería existente en el editor de machete
+    this.initDrumEditor(song.drumPattern, song.timeSignature.numerator);
 
     document.getElementById('song-modal-overlay').classList.add('active');
   }
@@ -1088,6 +1099,10 @@ class AppController {
     }
 
     const songData = { title, artist, bpm, timeSignature, notes };
+
+    // Si el patrón de batería tiene notas marcadas o una anotación escrita, guardarlo
+    const drumPatternToSave = this.getValidatedDrumPattern();
+    songData.drumPattern = drumPatternToSave;
 
     if (this.editingSongId) {
       window.storageManager.updateSong(this.editingSongId, songData);
@@ -1228,6 +1243,17 @@ class AppController {
       this.nextSong();
     });
 
+    // 2.b Botón Toggle Machete Rítmico en Vivo y Botón Cerrar Tarjeta
+    document.getElementById('btn-toggle-drum-cheat')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleDrumCheatLive();
+    });
+
+    document.getElementById('btn-close-cheat-sheet')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleDrumCheatLive();
+    });
+
     // 3. Audio Toggle
     document.getElementById('btn-toggle-audio')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1342,6 +1368,43 @@ class AppController {
       if (customRow) {
         customRow.style.display = (e.target.value === 'custom') ? 'grid' : 'none';
       }
+      // Actualizar numerador en el editor de machete
+      let num = 4;
+      if (e.target.value === 'custom') {
+        num = parseInt(document.getElementById('input-custom-num')?.value, 10) || 4;
+      } else {
+        num = parseInt(e.target.value.split('/')[0], 10) || 4;
+      }
+      if (this.currentEditDrumPattern) {
+        this.currentEditDrumPattern.numerator = num;
+        this.currentEditDrumPattern.stepsPerBar = (num === 3 ? 12 : 16);
+        this.renderDrumMatrix();
+        this.renderDrumPreview();
+      }
+    });
+
+    // Listeners del Editor de Batería en el Modal
+    document.getElementById('drum-editor-toggle-header')?.addEventListener('click', () => {
+      this.toggleDrumEditorCollapse();
+    });
+
+    document.getElementById('btn-drum-bar-1')?.addEventListener('click', () => this.setDrumBars(1));
+    document.getElementById('btn-drum-bar-2')?.addEventListener('click', () => this.setDrumBars(2));
+
+    document.getElementById('select-drum-preset')?.addEventListener('change', (e) => {
+      if (e.target.value) {
+        this.applyDrumPreset(e.target.value);
+        e.target.value = '';
+      }
+    });
+
+    document.getElementById('btn-clear-drum-pattern')?.addEventListener('click', () => this.clearDrumPattern());
+
+    document.getElementById('input-drum-annotation')?.addEventListener('input', (e) => {
+      if (this.currentEditDrumPattern) {
+        this.currentEditDrumPattern.annotation = e.target.value;
+        this.renderDrumPreview();
+      }
     });
 
     // 12. Modal Ajustes (Accesible desde Escenario y desde Setlist)
@@ -1421,6 +1484,235 @@ class AppController {
     } else {
       document.exitFullscreen().catch(() => {});
     }
+  }
+
+  // =========================================================================
+  // MACHETE RÍTMICO / PARTITURA DE BATERÍA (STAGE VIEW & MODAL EDITOR)
+  // =========================================================================
+
+  updateDrumCheatSheetLiveUI() {
+    const cheatSheetEl = document.getElementById('stage-drum-cheat-sheet');
+    const cheatRenderEl = document.getElementById('stage-drum-score-render');
+    const toggleCheatBtn = document.getElementById('btn-toggle-drum-cheat');
+
+    if (!this.currentSong) {
+      if (cheatSheetEl) cheatSheetEl.style.display = 'none';
+      return;
+    }
+
+    const hasPattern = !!(this.currentSong.drumPattern && this.currentSong.drumPattern.tracks);
+
+    if (toggleCheatBtn) {
+      if (hasPattern) {
+        toggleCheatBtn.style.opacity = '1';
+        toggleCheatBtn.className = 'icon-btn ' + (this.showDrumCheatSheetLive ? 'active-green' : 'active-muted');
+        toggleCheatBtn.title = this.showDrumCheatSheetLive
+          ? 'Machete Rítmico Visible en Vivo (Toca para ocultar)'
+          : 'Machete Rítmico Oculto (Toca para ver)';
+      } else {
+        toggleCheatBtn.className = 'icon-btn';
+        toggleCheatBtn.style.opacity = '0.35';
+        toggleCheatBtn.title = 'Este tema no tiene machete rítmico configurado (Edita el tema para agregarlo)';
+      }
+    }
+
+    if (hasPattern && this.showDrumCheatSheetLive && cheatSheetEl && cheatRenderEl) {
+      cheatSheetEl.style.display = 'block';
+      cheatRenderEl.innerHTML = window.drumNotationEngine.renderToSVG(this.currentSong.drumPattern, {
+        width: (this.currentSong.drumPattern.bars === 1 ? 460 : 700),
+        height: 100
+      });
+    } else if (cheatSheetEl) {
+      cheatSheetEl.style.display = 'none';
+    }
+  }
+
+  toggleDrumCheatLive() {
+    if (!this.currentSong || !this.currentSong.drumPattern) {
+      this.showToast('ℹ️ Este tema no tiene machete rítmico. Puedes crearlo al editar la canción.');
+      return;
+    }
+    this.showDrumCheatSheetLive = !this.showDrumCheatSheetLive;
+    window.storageManager.saveSettings({ showDrumCheatSheetLive: this.showDrumCheatSheetLive });
+    this.updateDrumCheatSheetLiveUI();
+    this.showToast(this.showDrumCheatSheetLive ? '🥁 Machete Rítmico Activado' : '🙈 Machete Rítmico Ocultado');
+  }
+
+  initDrumEditor(songPattern = null, numerator = 4) {
+    const num = numerator || (this.currentSong ? this.currentSong.timeSignature.numerator : 4);
+    if (songPattern && songPattern.tracks) {
+      this.currentEditDrumPattern = JSON.parse(JSON.stringify(songPattern));
+      if (!this.currentEditDrumPattern.numerator) this.currentEditDrumPattern.numerator = num;
+      if (!this.currentEditDrumPattern.stepsPerBar) this.currentEditDrumPattern.stepsPerBar = (num === 3 ? 12 : 16);
+    } else {
+      this.currentEditDrumPattern = window.drumNotationEngine.createEmptyPattern(1, num);
+    }
+
+    // Actualizar botones de compases (1 o 2)
+    const btn1 = document.getElementById('btn-drum-bar-1');
+    const btn2 = document.getElementById('btn-drum-bar-2');
+    if (btn1 && btn2) {
+      btn1.className = 'drum-bar-btn ' + (this.currentEditDrumPattern.bars === 1 ? 'active' : '');
+      btn2.className = 'drum-bar-btn ' + (this.currentEditDrumPattern.bars === 2 ? 'active' : '');
+    }
+
+    // Actualizar input de anotación
+    const annotationInput = document.getElementById('input-drum-annotation');
+    if (annotationInput) {
+      annotationInput.value = this.currentEditDrumPattern.annotation || '';
+    }
+
+    this.renderDrumMatrix();
+    this.renderDrumPreview();
+  }
+
+  toggleDrumEditorCollapse() {
+    const card = document.querySelector('.drum-editor-card');
+    if (card) {
+      card.classList.toggle('collapsed');
+    }
+  }
+
+  setDrumBars(bars) {
+    if (!this.currentEditDrumPattern) return;
+    bars = Math.min(2, Math.max(1, bars));
+    if (this.currentEditDrumPattern.bars === bars) return;
+
+    this.currentEditDrumPattern.bars = bars;
+    const numerator = this.currentEditDrumPattern.numerator || 4;
+    const stepsPerBar = (numerator === 3 ? 12 : 16);
+    this.currentEditDrumPattern.stepsPerBar = stepsPerBar;
+    const totalSteps = stepsPerBar * bars;
+
+    ['hihat', 'snare', 'kick', 'tom'].forEach(track => {
+      const currentArr = this.currentEditDrumPattern.tracks[track] || [];
+      const newArr = new Array(totalSteps).fill(0);
+      for (let i = 0; i < Math.min(currentArr.length, totalSteps); i++) {
+        newArr[i] = currentArr[i];
+      }
+      this.currentEditDrumPattern.tracks[track] = newArr;
+    });
+
+    const btn1 = document.getElementById('btn-drum-bar-1');
+    const btn2 = document.getElementById('btn-drum-bar-2');
+    if (btn1) btn1.className = 'drum-bar-btn ' + (bars === 1 ? 'active' : '');
+    if (btn2) btn2.className = 'drum-bar-btn ' + (bars === 2 ? 'active' : '');
+
+    this.renderDrumMatrix();
+    this.renderDrumPreview();
+  }
+
+  applyDrumPreset(presetKey) {
+    const num = this.currentEditDrumPattern ? this.currentEditDrumPattern.numerator : 4;
+    const preset = window.drumNotationEngine.getPreset(presetKey, num);
+    if (!preset) return;
+
+    this.currentEditDrumPattern = preset;
+
+    const btn1 = document.getElementById('btn-drum-bar-1');
+    const btn2 = document.getElementById('btn-drum-bar-2');
+    if (btn1) btn1.className = 'drum-bar-btn ' + (preset.bars === 1 ? 'active' : '');
+    if (btn2) btn2.className = 'drum-bar-btn ' + (preset.bars === 2 ? 'active' : '');
+
+    const annotationInput = document.getElementById('input-drum-annotation');
+    if (annotationInput) {
+      annotationInput.value = preset.annotation || '';
+    }
+
+    this.renderDrumMatrix();
+    this.renderDrumPreview();
+    if (navigator.vibrate) navigator.vibrate(15);
+  }
+
+  clearDrumPattern() {
+    if (!this.currentEditDrumPattern) return;
+    const totalSteps = (this.currentEditDrumPattern.stepsPerBar || 16) * this.currentEditDrumPattern.bars;
+    ['hihat', 'snare', 'kick', 'tom'].forEach(track => {
+      this.currentEditDrumPattern.tracks[track] = new Array(totalSteps).fill(0);
+    });
+    this.currentEditDrumPattern.annotation = '';
+    const annotationInput = document.getElementById('input-drum-annotation');
+    if (annotationInput) annotationInput.value = '';
+
+    this.renderDrumMatrix();
+    this.renderDrumPreview();
+    this.showToast('🧹 Grilla de batería vaciada');
+  }
+
+  toggleDrumCell(track, step) {
+    if (!this.currentEditDrumPattern || !this.currentEditDrumPattern.tracks[track]) return;
+    const currentVal = this.currentEditDrumPattern.tracks[track][step];
+    this.currentEditDrumPattern.tracks[track][step] = currentVal ? 0 : 1;
+
+    this.renderDrumMatrix();
+    this.renderDrumPreview();
+    if (navigator.vibrate) navigator.vibrate(10);
+  }
+
+  renderDrumMatrix() {
+    const container = document.getElementById('drum-matrix-container');
+    if (!container || !this.currentEditDrumPattern) return;
+
+    const bars = this.currentEditDrumPattern.bars || 1;
+    const numerator = this.currentEditDrumPattern.numerator || 4;
+    const stepsPerBar = this.currentEditDrumPattern.stepsPerBar || (numerator === 3 ? 12 : 16);
+    const totalSteps = stepsPerBar * bars;
+
+    const tracks = ['hihat', 'snare', 'kick', 'tom'];
+
+    container.innerHTML = tracks.map(track => {
+      const cells = [];
+      for (let s = 0; s < totalSteps; s++) {
+        const isStepInBar = s % stepsPerBar;
+        const isBeatAccent = (stepsPerBar === 16 && isStepInBar % 4 === 0) || (stepsPerBar === 12 && isStepInBar % 4 === 0);
+        const isBarDivider = (s === stepsPerBar); // Inicio de compás 2
+        const isActive = this.currentEditDrumPattern.tracks[track] && this.currentEditDrumPattern.tracks[track][s];
+
+        let classNames = `drum-cell-btn ${track}`;
+        if (isActive) classNames += ' active';
+        if (isBeatAccent) classNames += ' beat-accent';
+        if (isBarDivider) classNames += ' bar-divider-left';
+
+        cells.push(`
+          <button type="button" 
+                  class="${classNames}" 
+                  onclick="window.appController.toggleDrumCell('${track}', ${s})" 
+                  title="${track} paso ${s + 1}">
+          </button>
+        `);
+      }
+      return `<div class="drum-matrix-row">${cells.join('')}</div>`;
+    }).join('');
+  }
+
+  renderDrumPreview() {
+    const previewContainer = document.getElementById('drum-preview-render');
+    if (!previewContainer || !this.currentEditDrumPattern) return;
+
+    previewContainer.innerHTML = window.drumNotationEngine.renderToSVG(this.currentEditDrumPattern, {
+      width: (this.currentEditDrumPattern.bars === 1 ? 460 : 700),
+      height: 100
+    });
+  }
+
+  getValidatedDrumPattern() {
+    if (!this.currentEditDrumPattern) return null;
+    let hasAnyNote = false;
+    const tracks = this.currentEditDrumPattern.tracks;
+    if (tracks) {
+      for (const trackName of ['hihat', 'snare', 'kick', 'tom']) {
+        if (tracks[trackName] && tracks[trackName].some(v => v === 1)) {
+          hasAnyNote = true;
+          break;
+        }
+      }
+    }
+    const hasAnnotation = !!(this.currentEditDrumPattern.annotation && this.currentEditDrumPattern.annotation.trim());
+
+    if (!hasAnyNote && !hasAnnotation) {
+      return null;
+    }
+    return JSON.parse(JSON.stringify(this.currentEditDrumPattern));
   }
 
   showToast(message) {
