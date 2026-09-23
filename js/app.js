@@ -1539,13 +1539,44 @@ class AppController {
   }
 
   initDrumEditor(songPattern = null, numerator = 4) {
+    const card = document.getElementById('drum-editor-card') || document.querySelector('.drum-editor-card');
     const num = numerator || (this.currentSong ? this.currentSong.timeSignature.numerator : 4);
+    
+    const hasExistingPattern = !!(songPattern && songPattern.tracks && (
+      (songPattern.tracks.hihat && songPattern.tracks.hihat.some(v => v === 1)) ||
+      (songPattern.tracks.snare && songPattern.tracks.snare.some(v => v === 1)) ||
+      (songPattern.tracks.kick && songPattern.tracks.kick.some(v => v === 1)) ||
+      (songPattern.tracks.tom && songPattern.tracks.tom.some(v => v === 1)) ||
+      (songPattern.annotation && songPattern.annotation.trim())
+    ));
+
     if (songPattern && songPattern.tracks) {
       this.currentEditDrumPattern = JSON.parse(JSON.stringify(songPattern));
       if (!this.currentEditDrumPattern.numerator) this.currentEditDrumPattern.numerator = num;
       if (!this.currentEditDrumPattern.stepsPerBar) this.currentEditDrumPattern.stepsPerBar = (num === 3 ? 12 : 16);
     } else {
-      this.currentEditDrumPattern = window.drumNotationEngine.createEmptyPattern(1, num);
+      this.currentEditDrumPattern = window.drumNotationEngine ? window.drumNotationEngine.createEmptyPattern(1, num) : {
+        bars: 1,
+        numerator: num,
+        stepsPerBar: (num === 3 ? 12 : 16),
+        annotation: '',
+        tracks: { hihat: [], snare: [], kick: [], tom: [] }
+      };
+    }
+
+    // Si la canción ya cuenta con un machete rítmico, abrirlo desplegado automáticamente
+    if (card) {
+      const subText = document.getElementById('drum-editor-subtitle-text');
+      const badge = document.getElementById('drum-editor-toggle-badge');
+      if (hasExistingPattern) {
+        card.classList.remove('collapsed');
+        if (subText) subText.textContent = 'Patrón o intro de 1 o 2 compases (Toca para ocultar)';
+        if (badge) badge.textContent = 'Ocultar';
+      } else {
+        card.classList.add('collapsed');
+        if (subText) subText.textContent = 'Patrón o intro de 1 o 2 compases (Toca para desplegar)';
+        if (badge) badge.textContent = 'Desplegar';
+      }
     }
 
     // Actualizar botones de compases (1 o 2)
@@ -1566,10 +1597,35 @@ class AppController {
     this.renderDrumPreview();
   }
 
-  toggleDrumEditorCollapse() {
-    const card = document.querySelector('.drum-editor-card');
-    if (card) {
-      card.classList.toggle('collapsed');
+  toggleDrumEditorCollapse(e) {
+    if (e) {
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }
+    const card = document.getElementById('drum-editor-card') || document.querySelector('.drum-editor-card');
+    if (!card) return;
+
+    const isCollapsed = card.classList.toggle('collapsed');
+    
+    // Actualizar badge y subtítulo
+    const subText = document.getElementById('drum-editor-subtitle-text');
+    const badge = document.getElementById('drum-editor-toggle-badge');
+    
+    if (subText) {
+      subText.textContent = isCollapsed
+        ? 'Patrón o intro de 1 o 2 compases (Toca para desplegar)'
+        : 'Patrón o intro de 1 o 2 compases (Toca para ocultar)';
+    }
+    if (badge) {
+      badge.textContent = isCollapsed ? 'Desplegar' : 'Ocultar';
+    }
+
+    if (!isCollapsed) {
+      this.renderDrumMatrix();
+      this.renderDrumPreview();
+      setTimeout(() => {
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
     }
   }
 

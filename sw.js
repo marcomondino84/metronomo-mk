@@ -1,5 +1,5 @@
-// Metrónomo MK - Service Worker v1.1.0
-const CACHE_NAME = 'metronomo-mk-v1.1.0';
+// Metrónomo MK - Service Worker v1.1.2
+const CACHE_NAME = 'metronomo-mk-v1.1.2';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -21,7 +21,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Precaching recursos esenciales de Metrónomo MK...');
+      console.log('[SW] Precaching recursos esenciales de Metrónomo MK v1.1.2...');
       return cache.addAll(ASSETS_TO_CACHE);
     }).then(() => self.skipWaiting())
   );
@@ -43,30 +43,45 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Estrategia Cache-First con Network Fallback
+// Estrategia Network-First para recursos locales con Fallback a Cache si está offline
 self.addEventListener('fetch', (event) => {
-  // Ignorar peticiones que no sean GET (o esquemas no soportados)
   if (event.request.method !== 'GET') return;
 
+  const requestUrl = new URL(event.request.url);
+
+  // Si es un recurso del mismo origen (app local): Network First para tener siempre la última versión
+  if (requestUrl.origin === location.origin) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) return cachedResponse;
+            if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
+              return caches.match('./index.html');
+            }
+          });
+        })
+    );
+    return;
+  }
+
+  // Para recursos externos (ej. fuentes Google): Cache First con Network Fallback
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+      if (cachedResponse) return cachedResponse;
       return fetch(event.request).then((networkResponse) => {
-        // Almacenar recursos en cache dinámicamente si la respuesta es válida
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
         }
         return networkResponse;
-      }).catch(() => {
-        // Si no hay red y es una navegación HTML, retornar index.html en cache
-        if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
-          return caches.match('./index.html');
-        }
       });
     })
   );
