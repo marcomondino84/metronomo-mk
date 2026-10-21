@@ -189,144 +189,149 @@
     </section>
 
     <!-- ====================================================================
-         3. MODAL: AGREGAR / EDITAR CANCIÓN + ASISTENTE IA
+         3. MODAL: AGREGAR / EDITAR CANCIÓN + ASISTENTE IA (CORREGIDO CON SCROLL)
          ==================================================================== -->
     <div id="song-modal-overlay" class="modal-overlay">
-      <div class="modal-content">
-        <div class="modal-header">
+      <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
+        <!-- Header Fijo -->
+        <div class="modal-header" style="flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid #222;">
           <h3 id="modal-song-title-heading">Nueva Canción</h3>
           <button id="btn-close-song-modal" class="close-modal-btn">✕</button>
         </div>
 
-        <div class="form-group">
-          <label>Título de la Canción</label>
-          <input type="text" id="input-song-title" class="form-input" placeholder="ej. Master of Puppets">
-        </div>
-
-        <div class="form-group">
-          <label>Artista / Banda</label>
-          <input type="text" id="input-song-artist" class="form-input" placeholder="ej. Metallica">
-        </div>
-
-        <!-- Botón Asistente IA -->
-        <button type="button" id="btn-ai-assist" class="btn-ai-assist">
-          <span>🤖 Sugerir BPM y Métrica con IA</span>
-        </button>
-
-        <div id="ai-suggestion-container"></div>
-
-        <div class="form-row">
+        <!-- Cuerpo con Scroll Vertical -->
+        <div style="overflow-y: auto; flex-grow: 1; padding-right: 4px; padding-top: 8px;">
           <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <label style="margin-bottom: 0;">BPM (Tempo)</label>
-              <button type="button" id="btn-modal-tap-tempo" class="btn-sm-tap" title="Toca repetidamente a ritmo para calcular el tempo">
-                🥁 Tap Tempo
-              </button>
-            </div>
-            <input type="number" id="input-song-bpm" class="form-input" min="20" max="400" value="120">
+            <label>Título de la Canción</label>
+            <input type="text" id="input-song-title" class="form-input" placeholder="ej. Master of Puppets">
           </div>
+
           <div class="form-group">
-            <label>Métrica</label>
-            <select id="select-song-metric" class="form-input">
-              <option value="4/4" selected>4/4 (Estándar)</option>
-              <option value="3/4">3/4 (Vals / Ternario)</option>
-              <option value="6/8">6/8 (Compuesto)</option>
-              <option value="2/4">2/4 (Marcha / Polka)</option>
-              <option value="5/4">5/4 (Impar - ej. Take Five)</option>
-              <option value="7/8">7/8 (Progresivo - ej. Rush)</option>
-              <option value="7/4">7/4 (Progresivo - ej. Money)</option>
-              <option value="9/8">9/8 (Compuesto)</option>
-              <option value="12/8">12/8 (Blues / Shuffle)</option>
-              <option value="custom">Personalizada...</option>
-            </select>
+            <label>Artista / Banda</label>
+            <input type="text" id="input-song-artist" class="form-input" placeholder="ej. Metallica">
           </div>
-        </div>
 
-        <div class="form-group">
-          <label>Ajuste Rápido de BPM</label>
-          <input type="range" id="range-song-bpm" min="30" max="300" value="120" style="accent-color: var(--neon-green); width: 100%;">
-        </div>
+          <!-- Botón Asistente IA -->
+          <button type="button" id="btn-ai-assist" class="btn-ai-assist">
+            <span>🤖 Sugerir BPM y Métrica con IA</span>
+          </button>
 
-        <!-- Fila de Métrica Personalizada (Oculta por defecto) -->
-        <div id="custom-metric-row" class="form-row" style="display: none;">
-          <div class="form-group">
-            <label>Numerador (Pulsos)</label>
-            <input type="number" id="input-custom-num" class="form-input" min="1" max="32" value="4">
-          </div>
-          <div class="form-group">
-            <label>Denominador (Figura)</label>
-            <input type="number" id="input-custom-den" class="form-input" min="1" max="32" value="4">
-          </div>
-        </div>
+          <div id="ai-suggestion-container"></div>
 
-        <div class="form-group">
-          <label>Notas de Batería / Estructura (Opcional)</label>
-          <input type="text" id="input-song-notes" class="form-input" placeholder="ej. Entra con redoble de caja en compás 4">
-        </div>
-
-        <!-- ================================================================
-             SECCIÓN: MACHETE RÍTMICO / PARTITURA DE BATERÍA (1 O 2 COMPASES)
-             ================================================================ -->
-        <div class="drum-editor-card" id="drum-editor-card">
-          <div class="drum-editor-header" id="drum-editor-toggle-header">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 1.25rem;">🥁</span>
-              <div>
-                <span class="drum-editor-title">Partitura & Machete Rítmico</span>
-                <span class="drum-editor-subtitle">Patrón visual de 1 o 2 compases y presets para escenario</span>
+          <div class="form-row">
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="margin-bottom: 0;">BPM (Tempo)</label>
+                <button type="button" id="btn-modal-tap-tempo" class="btn-sm-tap" title="Toca repetidamente a ritmo para calcular el tempo">
+                  🥁 Tap Tempo
+                </button>
               </div>
+              <input type="number" id="input-song-bpm" class="form-input" min="20" max="400" value="120">
             </div>
-          </div>
-
-          <div id="drum-editor-body" class="drum-editor-body">
-            <!-- Barra de Opciones y Presets -->
-            <div class="drum-tools-row">
-              <div class="drum-bars-pill">
-                <button type="button" id="btn-drum-bar-1" class="drum-bar-btn active">1 Compás</button>
-                <button type="button" id="btn-drum-bar-2" class="drum-bar-btn">2 Compases</button>
-              </div>
-
-              <select id="select-drum-preset" class="form-input drum-preset-dropdown">
-                <option value="">⚡ Elegir Preset...</option>
-                <option value="rock-standard">🥁 Rock Clásico (Bombo 1/3, Caja 2/4)</option>
-                <option value="four-on-floor">⚡ Cuatro al Piso / Disco Funk</option>
-                <option value="rock-heavy">🎸 Rock Pesado / Doble Bombo</option>
-                <option value="intro-fill">🥁 Redoble / Fill de Entrada (2 compases)</option>
-                <option value="half-time">🎵 Medio Tiempo / Balada</option>
-                <option value="ternary-3-4">📐 Compás 3/4 (Vals / Ternario)</option>
-                <option value="break-entry">🛑 Corte / Entrada en 4</option>
+            <div class="form-group">
+              <label>Métrica</label>
+              <select id="select-song-metric" class="form-input">
+                <option value="4/4" selected>4/4 (Estándar)</option>
+                <option value="3/4">3/4 (Vals / Ternario)</option>
+                <option value="6/8">6/8 (Compuesto)</option>
+                <option value="2/4">2/4 (Marcha / Polka)</option>
+                <option value="5/4">5/4 (Impar - ej. Take Five)</option>
+                <option value="7/8">7/8 (Progresivo - ej. Rush)</option>
+                <option value="7/4">7/4 (Progresivo - ej. Money)</option>
+                <option value="9/8">9/8 (Compuesto)</option>
+                <option value="12/8">12/8 (Blues / Shuffle)</option>
+                <option value="custom">Personalizada...</option>
               </select>
-
-              <button type="button" id="btn-clear-drum-pattern" class="btn-sm-action" style="color: var(--danger-red); border-color: rgba(239, 68, 68, 0.3);" title="Limpiar grilla de batería">
-                Limpiar
-              </button>
             </div>
+          </div>
 
-            <!-- Grilla Interactiva de Pasos -->
-            <div class="drum-grid-wrapper">
-              <div class="drum-grid-labels">
-                <div class="drum-row-label" title="Platillo / Hi-Hat">Hi-Hat ✕</div>
-                <div class="drum-row-label" title="Redoblante / Caja">Caja ●</div>
-                <div class="drum-row-label" title="Bombo">Bombo ●</div>
-                <div class="drum-row-label" title="Tom / Relleno">Tom ●</div>
+          <div class="form-group">
+            <label>Ajuste Rápido de BPM</label>
+            <input type="range" id="range-song-bpm" min="30" max="300" value="120" style="accent-color: var(--neon-green); width: 100%;">
+          </div>
+
+          <!-- Fila de Métrica Personalizada (Oculta por defecto) -->
+          <div id="custom-metric-row" class="form-row" style="display: none;">
+            <div class="form-group">
+              <label>Numerador (Pulsos)</label>
+              <input type="number" id="input-custom-num" class="form-input" min="1" max="32" value="4">
+            </div>
+            <div class="form-group">
+              <label>Denominador (Figura)</label>
+              <input type="number" id="input-custom-den" class="form-input" min="1" max="32" value="4">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Notas de Batería / Estructura (Opcional)</label>
+            <input type="text" id="input-song-notes" class="form-input" placeholder="ej. Entra con redoble de caja en compás 4">
+          </div>
+
+          <!-- ================================================================
+               SECCIÓN: MACHETE RÍTMICO / PARTITURA DE BATERÍA (1 O 2 COMPASES)
+               ================================================================ -->
+          <div class="drum-editor-card" id="drum-editor-card">
+            <div class="drum-editor-header" id="drum-editor-toggle-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.25rem;">🥁</span>
+                <div>
+                  <span class="drum-editor-title">Partitura & Machete Rítmico</span>
+                  <span class="drum-editor-subtitle">Patrón visual de 1 o 2 compases y presets para escenario</span>
+                </div>
               </div>
-              <div id="drum-matrix-container" class="drum-matrix-container"></div>
             </div>
 
-            <!-- Anotación de Texto para el Machete -->
-            <div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
-              <input type="text" id="input-drum-annotation" class="form-input" style="font-size: 0.82rem; padding: 6px 10px;" placeholder="Indicación para el machete (ej. 'Entra en el compás 4 con crash')">
-            </div>
+            <div id="drum-editor-body" class="drum-editor-body">
+              <!-- Barra de Opciones y Presets -->
+              <div class="drum-tools-row">
+                <div class="drum-bars-pill">
+                  <button type="button" id="btn-drum-bar-1" class="drum-bar-btn active">1 Compás</button>
+                  <button type="button" id="btn-drum-bar-2" class="drum-bar-btn">2 Compases</button>
+                </div>
 
-            <!-- Previsualización en Vivo del Pentagrama SVG -->
-            <div class="drum-preview-box">
-              <div class="drum-preview-label">Vista Previa de Partitura (SVG Nítido):</div>
-              <div id="drum-preview-render" class="drum-preview-render"></div>
+                <select id="select-drum-preset" class="form-input drum-preset-dropdown">
+                  <option value="">⚡ Elegir Preset...</option>
+                  <option value="rock-standard">🥁 Rock Clásico (Bombo 1/3, Caja 2/4)</option>
+                  <option value="four-on-floor">⚡ Cuatro al Piso / Disco Funk</option>
+                  <option value="rock-heavy">🎸 Rock Pesado / Doble Bombo</option>
+                  <option value="intro-fill">🥁 Redoble / Fill de Entrada (2 compases)</option>
+                  <option value="half-time">🎵 Medio Tiempo / Balada</option>
+                  <option value="ternary-3-4">📐 Compás 3/4 (Vals / Ternario)</option>
+                  <option value="break-entry">🛑 Corte / Entrada en 4</option>
+                </select>
+
+                <button type="button" id="btn-clear-drum-pattern" class="btn-sm-action" style="color: var(--danger-red); border-color: rgba(239, 68, 68, 0.3);" title="Limpiar grilla de batería">
+                  Limpiar
+                </button>
+              </div>
+
+              <!-- Grilla Interactiva de Pasos -->
+              <div class="drum-grid-wrapper">
+                <div class="drum-grid-labels">
+                  <div class="drum-row-label" title="Platillo / Hi-Hat">Hi-Hat ✕</div>
+                  <div class="drum-row-label" title="Redoblante / Caja">Caja ●</div>
+                  <div class="drum-row-label" title="Bombo">Bombo ●</div>
+                  <div class="drum-row-label" title="Tom / Relleno">Tom ●</div>
+                </div>
+                <div id="drum-matrix-container" class="drum-matrix-container"></div>
+              </div>
+
+              <!-- Anotación de Texto para el Machete -->
+              <div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+                <input type="text" id="input-drum-annotation" class="form-input" style="font-size: 0.82rem; padding: 6px 10px;" placeholder="Indicación para el machete (ej. 'Entra en el compás 4 con crash')">
+              </div>
+
+              <!-- Previsualización en Vivo del Pentagrama SVG -->
+              <div class="drum-preview-box">
+                <div class="drum-preview-label">Vista Previa de Partitura (SVG Nítido):</div>
+                <div id="drum-preview-render" class="drum-preview-render"></div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="modal-actions">
+        <!-- Botones de Acción Fijos Abajo -->
+        <div class="modal-actions" style="flex-shrink: 0; padding-top: 12px; border-top: 1px solid #222; margin-top: 8px;">
           <button type="button" id="btn-cancel-song-modal" class="btn-secondary">Cancelar</button>
           <button type="button" id="btn-save-song-modal" class="btn-primary">Guardar Canción</button>
         </div>
