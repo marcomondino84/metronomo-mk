@@ -188,19 +188,19 @@
       </div>
     </section>
 
-    <!-- ====================================================================
-         3. MODAL: AGREGAR / EDITAR CANCIÓN + ASISTENTE IA (CORREGIDO CON SCROLL)
+   <!-- ====================================================================
+         3. MODAL: AGREGAR / EDITAR CANCIÓN + ASISTENTE IA (FORZADO CON SCROLL)
          ==================================================================== -->
     <div id="song-modal-overlay" class="modal-overlay">
-      <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
+      <div class="modal-content" style="max-height: 85vh !important; height: 85vh !important; display: flex !important; flex-direction: column !important; overflow: hidden !important;">
         <!-- Header Fijo -->
-        <div class="modal-header" style="flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid #222;">
+        <div class="modal-header" style="flex-shrink: 0 !important; padding-bottom: 12px; border-bottom: 1px solid #222;">
           <h3 id="modal-song-title-heading">Nueva Canción</h3>
           <button id="btn-close-song-modal" class="close-modal-btn">✕</button>
         </div>
 
-        <!-- Cuerpo con Scroll Vertical -->
-        <div style="overflow-y: auto; flex-grow: 1; padding-right: 4px; padding-top: 8px;">
+        <!-- Cuerpo con Scroll Vertical Forzado -->
+        <div style="overflow-y: auto !important; -webkit-overflow-scrolling: touch !important; flex-grow: 1 !important; padding-right: 4px; padding-top: 8px;">
           <div class="form-group">
             <label>Título de la Canción</label>
             <input type="text" id="input-song-title" class="form-input" placeholder="ej. Master of Puppets">
@@ -331,7 +331,7 @@
         </div>
 
         <!-- Botones de Acción Fijos Abajo -->
-        <div class="modal-actions" style="flex-shrink: 0; padding-top: 12px; border-top: 1px solid #222; margin-top: 8px;">
+        <div class="modal-actions" style="flex-shrink: 0 !important; padding-top: 12px; border-top: 1px solid #222; margin-top: 8px;">
           <button type="button" id="btn-cancel-song-modal" class="btn-secondary">Cancelar</button>
           <button type="button" id="btn-save-song-modal" class="btn-primary">Guardar Canción</button>
         </div>
